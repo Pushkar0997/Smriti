@@ -6,6 +6,19 @@ Every session writes an entry, including failed sessions. "Noticed, did not fix"
 
 ---
 
+## 2026-09-04 — Antigravity / Session 5 — M0-SETUP-01 closure
+
+**Milestone:** M0 — Correctness skeleton.
+**Tasks attempted:** M0-SETUP-01 closure.
+**Landed:** Re-ticked M0-SETUP-01 in `spec/tasks.md` as fully complete. Production deployment at https://smriti-indol.vercel.app confirmed live and serving the Next.js starter page.
+**Did not land:** N/A — task is fully complete.
+**Blockers:** None for M0-SETUP-02.
+**Noticed, did not fix:** `.gitignore` was updated by user with extra `.vercel` and `.env*` entries.
+**Spec changes:** Re-ticked `M0-SETUP-01` in `spec/tasks.md` with live URL note.
+**Next action:** M0-SETUP-02 — Create Supabase project, enable pgvector extension, and create documents/chunks/query_counts tables per `architecture.md` §3.
+
+---
+
 ## 2026-09-04 — Antigravity / Session 4 — M0 correction
 
 **Milestone:** M0 — Correctness skeleton.

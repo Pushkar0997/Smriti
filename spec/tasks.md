@@ -9,7 +9,7 @@ Task ID format: `M<milestone>-<area>-<number>`
 ## M0 — Correctness skeleton
 
 ### Setup
-- [ ] **M0-SETUP-01** Init Next.js 15 (App Router, TS) repo, connect to a new Vercel project
+- [x] **M0-SETUP-01** Init Next.js 15 (App Router, TS) repo, connect to a new Vercel project (Next.js 15.5 initialized; Vercel deployment confirmed live at https://smriti-indol.vercel.app)
 - [ ] **M0-SETUP-02** Create Supabase project, enable the `pgvector` extension, create `documents`/`chunks`/`query_counts` tables per `architecture.md` §3
 - [ ] **M0-SETUP-03** Add heartbeat cron (Vercel Cron or GitHub Actions — check which is free-tier-viable) hitting `/api/heartbeat` every 3 days. Acceptance: a **manual invocation** of the route succeeds AND writes to the DB (do not wait 3 days for the schedule), AND the cron appears registered in the Vercel/Actions dashboard with a valid schedule.
 
