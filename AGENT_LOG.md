@@ -6,6 +6,19 @@ Every session writes an entry, including failed sessions. "Noticed, did not fix"
 
 ---
 
+## 2026-09-04 — Antigravity / Session 8 — M0-SETUP-03 implementation
+
+**Milestone:** M0 — Correctness skeleton.
+**Tasks attempted:** M0-SETUP-03.
+**Landed:** Configured `vercel.json` with daily cron (`0 0 * * *`) targeting `/api/heartbeat`. Created `app/api/heartbeat/route.ts` enforcing `CRON_SECRET` via `Authorization: Bearer <CRON_SECRET>` and writing/touching `query_counts` on IST date rollover. Updated `supabase/schema.sql` with explicit `service_role` grants. Verified build and lint pass with 0 errors. Verified local endpoint rejects unauthenticated requests with 401.
+**Did not land:** Successful database write during manual invocation currently fails with PostgreSQL error 42501 (`permission denied for table query_counts`) because tables created under `postgres` in Supabase need explicit `service_role` table grants.
+**Blockers:** Executing the `GRANT` statements from `supabase/schema.sql` (Section 9) in the Supabase SQL Editor.
+**Noticed, did not fix:** Tables created in Supabase SQL Editor require explicit `service_role` grants before PostgREST/service_role keys can read or write.
+**Spec changes:** Updated `spec/tasks.md` reflecting daily schedule (`0 0 * * *`) per CONTRACT.md and current status.
+**Next action:** Pushkar executes Section 9 grants in Supabase SQL Editor, deploys to Vercel, manually invokes `/api/heartbeat` with `CRON_SECRET` to verify 200 OK and DB write, and closes M0-SETUP-03.
+
+---
+
 ## 2026-09-04 — Antigravity / Session 7 — M0-SETUP-02 closure
 
 **Milestone:** M0 — Correctness skeleton.
