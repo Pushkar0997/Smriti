@@ -6,6 +6,19 @@ Every session writes an entry, including failed sessions. "Noticed, did not fix"
 
 ---
 
+## 2026-09-04 — Antigravity / Session 7 — M0-SETUP-02 closure
+
+**Milestone:** M0 — Correctness skeleton.
+**Tasks attempted:** M0-SETUP-02 closure.
+**Landed:** Re-ticked M0-SETUP-02 in `spec/tasks.md` as fully complete. Supabase project created, `supabase/schema.sql` successfully executed in Supabase SQL Editor, all three tables (`documents`, `chunks`, `query_counts`) and functions/indexes verified active, and `NEXT_PUBLIC_SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` confirmed configured in `.env.local` and Vercel Production.
+**Did not land:** N/A — task is fully complete.
+**Blockers:** None for M0-SETUP-03.
+**Noticed, did not fix:** `GEMINI_API_KEY` is also configured in Vercel Production env vars.
+**Spec changes:** Re-ticked `M0-SETUP-02` in `spec/tasks.md` with confirmation note.
+**Next action:** M0-SETUP-03 — Add heartbeat cron hitting `/api/heartbeat` every 3 days and verify manual invocation writes to the DB.
+
+---
+
 ## 2026-09-04 — Antigravity / Session 6 — M0-SETUP-02 repo setup
 
 **Milestone:** M0 — Correctness skeleton.
