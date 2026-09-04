@@ -9,22 +9,22 @@ Task ID format: `M<milestone>-<area>-<number>`
 ## M0 — Correctness skeleton
 
 ### Setup
-- [ ] **M0-SETUP-01** Init Next.js 15 (App Router, TS) repo, connect to a new Vercel project (Next.js init complete in commit 608405a; Vercel connection to be done manually via dashboard import, to be re-ticked once confirmed live)
+- [ ] **M0-SETUP-01** Init Next.js 15 (App Router, TS) repo, connect to a new Vercel project
 - [ ] **M0-SETUP-02** Create Supabase project, enable the `pgvector` extension, create `documents`/`chunks`/`query_counts` tables per `architecture.md` §3
-- [ ] **M0-SETUP-03** Add heartbeat cron (Vercel Cron or GitHub Actions — check which is free-tier-viable) hitting Supabase every 3 days; verify it actually fires once before moving on
+- [ ] **M0-SETUP-03** Add heartbeat cron (Vercel Cron or GitHub Actions — check which is free-tier-viable) hitting `/api/heartbeat` every 3 days. Acceptance: a **manual invocation** of the route succeeds AND writes to the DB (do not wait 3 days for the schedule), AND the cron appears registered in the Vercel/Actions dashboard with a valid schedule.
 
 ### Ingestion
 - [ ] **M0-ING-01** Write `lib/ingest.ts` — chunk text (500 tokens, 50 overlap per `CONTRACT.md`), embed via Gemini embeddings, store in `chunks`
-- [ ] **M0-ING-02** Load a small test fixture (a handful of made-up Q&A pairs, not real PYQs) through the ingestion path
+- [ ] **M0-ING-02** Load a test fixture of **exactly 5 made-up Q&A pairs** (not real PYQs) through the ingestion path. At least one pair must be long enough to span 2+ chunks, so overlap behaviour is actually exercised.
 
 ### Retrieval and answering
 - [ ] **M0-RAG-01** Write `lib/retrieval.ts` — embed the incoming query, pgvector similarity search, return top-k chunks with scores
 - [ ] **M0-RAG-02** Implement the INV-1 ground-check: if top score < `SIMILARITY_THRESHOLD` (0.75), return the fixed "not in my material" response and skip the LLM call entirely
-- [ ] **M0-RAG-03** Wire `/api/ask`: retrieval → ground-check → Gemini Flash-Lite call with retrieved context → return `{ answer, citations }`
+- [ ] **M0-RAG-03** Wire `/api/ask`: retrieval → ground-check → LLM call with retrieved context (model per D-007 — verify the lightest free-tier model live against AI Studio, do not assume a name) → return `{ answer, citations }`
 
 ### UI and deploy
 - [ ] **M0-UI-01** Minimal chat page — input box, answer display, visible source citation per answer
-- [ ] **M0-DEPLOY-01** First deploy to Vercel; confirm live URL works in a private window; confirm no secret appears in the built output
+- [ ] **M0-DEPLOY-01** First deploy to Vercel; confirm live URL works in a private window; confirm no secret in the built output by grepping `.next/` for the literal values of `GEMINI_API_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, and `ACCESS_CODE` — zero matches required.
 
 ---
 
@@ -33,7 +33,7 @@ Task ID format: `M<milestone>-<area>-<number>`
 ### Content
 - [ ] **M1-CONTENT-01** Pull PYQs from the existing Drive link + Pushkar's own PPTs/notes for the pilot subject
 - [ ] **M1-CONTENT-02** Clean and format into ingestable text; OCR any scanned PYQs
-- [ ] **M1-CONTENT-03** Run through `lib/ingest.ts`; confirm chunk/embedding counts look sane
+- [ ] **M1-CONTENT-03** Run through `lib/ingest.ts`. Acceptance: `chunks` row count equals embedding count exactly (no partial failures); zero chunks with empty/null `content`; zero chunks exceeding `CHUNK_SIZE_TOKENS`; total chunk count is within 2x of `(total source tokens / 450)` — a wild deviation means chunking silently misbehaved.
 
 ### Verification
 - [ ] **M1-VERIFY-01** Write 10 real sample questions against the ingested material; spot-check each answer for correct grounding
@@ -45,7 +45,7 @@ Task ID format: `M<milestone>-<area>-<number>`
 
 - [ ] **M2-PILOT-01** Recruit 10–15 juniors, share the access link/code
 - [ ] **M2-PILOT-02** Add query-count-only telemetry (INV-3-compliant) to `query_counts`
-- [ ] **M2-PILOT-03** Run through the pilot subject's exam week; record the ≥5-of-15 verdict in `evals.md` §7
+- [ ] **M2-PILOT-03** Run through the pilot subject's exam week; record the ≥5-of-15 verdict in `evals.md` §7. A **real query** = a question about the pilot subject's content, sent by a test user who is not Pushkar. Excluded: blank/whitespace submissions, obvious testing-the-bot pokes ('hi', 'are you real'), and anything Pushkar sent himself.
 
 ---
 

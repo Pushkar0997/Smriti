@@ -21,18 +21,17 @@ Versions are approximate on purpose where model names are concerned — Google r
 smriti/
 ├── app/
 │   ├── api/
-│   │   └── ask/          ← the one API route: embed query, retrieve, ground-check, call LLM, return answer+citation
+│   │   ├── ask/          ← the product API route: embed query, retrieve, ground-check, call LLM, return answer+citations
+│   │   └── heartbeat/     ← invoked by the cron job only; performs one trivial DB write to keep Supabase awake. Not a product route — kept separate so nothing about the cron can affect /api/ask.
 │   └── page.tsx           ← the single chat UI page — no routing complexity needed at M0
 ├── lib/
 │   ├── retrieval.ts        ← embedding + pgvector similarity search
 │   ├── ingest.ts           ← chunking + embedding pipeline for source material (run offline/locally, not a live endpoint)
 │   └── gemini.ts            ← thin wrapper around the Gemini API calls, so the model name lives in one place
-├── scripts/
-│   └── heartbeat.ts        ← the Supabase keepalive ping, invoked by the cron job
 └── spec/
 ```
 
-One file per concern, because at this scale a bigger structure is ceremony, not organization.
+Two API routes, not one: `/api/ask` is the product, `/api/heartbeat` is infrastructure. Otherwise one file per concern, because at this scale a bigger structure is ceremony, not organization.
 
 ## 3. Data model
 
@@ -48,14 +47,22 @@ Expensive to reverse: the chunking strategy (500 tokens, 50 overlap) and embeddi
 
 | Capability | Status | Needed for |
 |---|---|---|
-| Single-subject grounded Q&A with citations | supported (M0 target) | the core product |
-| "Not in my material" fallback for low-confidence retrieval | supported (M0 target) | INV-1 |
-| Heartbeat to prevent Supabase pause | supported (M0 target) | uptime during quiet stretches |
-| Query-count-only telemetry | supported (M2 target) | the success metric |
+| Single-subject grounded Q&A with citations | **planned — M0, not yet built** | the core product |
+| "Not in my material" fallback for low-confidence retrieval | **planned — M0, not yet built** | INV-1 |
+| Heartbeat to prevent Supabase pause | **planned — M0, not yet built** | uptime during quiet stretches |
+| Query-count-only telemetry | **planned — M2, not yet built** | the success metric |
 | Multiple subjects | **not supported** | would unblock a real M3, only after the M2 pilot passes |
 | User accounts / login | **not supported** | not needed until (if ever) this grows past a shared-link test group |
 | Other-branch or named-senior attributed notes | **not supported** | blocked on INV-2 going from dormant to tested — see `decisions.md` D-003 |
 | Mobile app | **not supported** | non-goal, see `product.md` |
+
+"planned" means specified but not built — do not treat it as available. Change a row to "built" only in the same commit that lands the implementation.
+
+## 4b. Prompt and access gating — pinned
+
+**LLM prompt shape for `/api/ask`.** The system instruction must state, in substance: answer *only* from the provided context; if the context does not contain the answer, say so rather than using general knowledge; do not invent exam questions, marks, or professor names not present in the context. Retrieved chunks are passed as clearly delimited context, with the user's question last. This is not optional phrasing — it is the prompt-level half of INV-1, complementing the retrieval-level check.
+
+**Access gating (M0/M1).** A single shared passphrase, stored as a Vercel environment variable (`ACCESS_CODE`), checked server-side in the API route. Not a user account, not per-user tokens, no database table. Rotating it means changing one env var. Deliberately minimal — see `product.md` non-goals.
 
 ## 5. Scale assumptions
 - Building for: 15 users, one subject.
@@ -64,7 +71,7 @@ Expensive to reverse: the chunking strategy (500 tokens, 50 overlap) and embeddi
 - Expensive to reverse: chunking strategy and embedding dimension (data model §3).
 
 ## 6. Performance budget
-An answer should return in under ~5 seconds end-to-end (embed query + vector search + LLM call) on a free-tier Flash-Lite call — no hard SLA at this scale, but if it regularly exceeds ~10s the retrieval or prompt size needs checking, not just "wait longer."
+An answer should return in under ~5 seconds end-to-end (embed query + vector search + LLM call) on a free-tier call. No hard SLA at this scale, but if it regularly exceeds ~10s the retrieval or prompt size needs checking, not just "wait longer."
 
 ## 7. Security and privacy
 - Stored about users: nothing identifying. A shared access code gates the test group; no accounts, no names tied to queries.

@@ -33,7 +33,7 @@ Content attributed to a named person is never rewritten while that name stays at
 Query counts may be recorded for the usage metric. Query *text* is never persisted or logged anywhere, tied to a user or not.
 
 ### INV-4 — Zero recurring cost
-Nothing in this stack may incur a per-request or monthly cost. Free tiers only (Vercel, Supabase, Google AI Studio). Do not add a paid service, a dedicated server, or a metered dependency without flagging it to Pushkar first.
+Nothing in this stack may incur a per-request or monthly cost. Free tiers only (Vercel, Supabase, Google AI Studio). Do not add a paid service, a dedicated server, or a metered dependency without flagging it to Pushkar first. Full statement and detection method in `CONTRACT.md` — that file is authoritative for all four invariants.
 
 ---
 
@@ -57,6 +57,8 @@ Do not add a dependency without checking: is it needed, is it maintained, does i
 
 **One task per change.** Do not batch. Do not refactor files you were not asked to touch.
 
+**Push, do not just commit.** A commit that only exists locally has not shipped: Vercel deploys from the remote, so an unpushed commit means the live site silently serves an older build. End every task by running `git push` and reporting the result. If push fails (auth, conflict), say so explicitly — do not report the task as done.
+
 **Report what you changed.** Files created, files modified, exported symbols changed, spec files needing updates, and anything noticed but not fixed.
 
 **Update the spec when reality diverges** — in the same change, not later.
@@ -65,7 +67,7 @@ Do not add a dependency without checking: is it needed, is it maintained, does i
 
 **Prefer improving over adding.** Between a new feature and making an existing one work properly, improve the existing one.
 
-**Never write a real secret into a tracked file.** Not in a test fixture, not in a README example, not commented out, not "temporarily". Secrets live in Vercel's environment variables (and `.env.local`, gitignored, for local dev) and reach the app via `process.env`. If you need a credential to make something work and cannot find one, stop and ask.
+**Never write a real secret into a tracked file.** Not in a test fixture, not in a README example, not commented out, not "temporarily". Secrets live in Vercel's environment variables (and `.env.local`, gitignored, for local dev) and reach the app via `process.env`. Current set: `GEMINI_API_KEY`, `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `ACCESS_CODE`. If you need a credential to make something work and cannot find one, stop and ask.
 
 **Content is not a coding task.** Aggregating, cleaning, and formatting the PYQs/notes for the pilot subject (M1) has its own acceptance criteria in `spec/tasks.md` — do not treat it as a side effect of building the ingestion script.
 
@@ -81,6 +83,7 @@ Do not add a dependency without checking: is it needed, is it maintained, does i
 - [ ] `spec/tasks.md` checkbox ticked
 - [ ] `AGENT_LOG.md` entry written
 - [ ] Committed as `<type>(<scope>): <task-id> <summary>`
+- [ ] **Pushed to the remote**, and the push confirmed successful
 
 "It builds" is not done.
 
@@ -95,6 +98,6 @@ Do not add a dependency without checking: is it needed, is it maintained, does i
 
 ## Budget for metered dependencies
 
-Live calls to Gemini (Flash-Lite, free tier) are provisionally ~30 RPM / ~1,500 RPD — **treat as unverified until checked against the live quota shown in the actual AI Studio project**, since Google no longer publishes one fixed table (see `spec/architecture.md` §6 and D-006). At 15 test users × ~10 queries/day this has comfortable daily headroom; the real risk is per-minute bursts during a shared study session, not the daily ceiling.
+Live calls to Gemini's free tier are provisionally in the low thousands of requests/day with a much tighter per-minute ceiling — **treat both as unverified until checked against the live quota shown in the actual AI Studio project**, since Google no longer publishes one fixed table (see `spec/architecture.md` §1 and D-006/D-007). At 15 test users × ~10 queries/day this has comfortable daily headroom; the real risk is per-minute bursts during a shared study session, not the daily ceiling.
 
 Verify live calls **once**, at the end of a task, deliberately. Never probe or iterate against the live Gemini or Supabase service while debugging — reproduce with a mock or fixture and spend the real call only to confirm the fix. If a quota is exhausted while debugging, stop and report it rather than waiting it out.

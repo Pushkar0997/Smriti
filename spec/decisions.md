@@ -91,3 +91,30 @@ Every non-obvious decision, why, and what was rejected. **This file exists to st
 - *Pinning an exact lighter-tier model name now* — rejected; the free-tier lineup and naming has shifted repeatedly in the weeks before this was written. Pin at build time against the live AI Studio model list instead.
 
 **Revisit if:** the live model list at build time shows the lighter tier is gone, or M1 real-content testing shows answer quality genuinely needs 3.8 Flash's extra reasoning — unlikely for a grounded-lookup task, but check before assuming.
+
+---
+
+## D-008 — Spec audit patches (tokenizer, top-k, citation shape, date rollover)
+
+**Status:** decided
+**Decision:** Pinned four previously-ambiguous conventions in `CONTRACT.md`: the chunking tokenizer is Gemini's own `countTokens` (not a heuristic), `TOP_K = 5`, `citations` is always a JSON array with string `section` values, and `query_counts` rolls over at IST midnight rather than UTC.
+**Rationale:** A read-only spec audit found each of these interpretable two ways. Unpinned conventions are where agents silently diverge across sessions, and the resulting bugs are miserable to find. The IST rollover is a deliberate exception to the UTC-storage rule because the metric measures Indian students' behaviour during an exam week — a UTC rollover would split one late-night cramming session across two rows.
+**Rejected:**
+- *Character-count or word-count chunking heuristics* — rejected; using a different tokenizer than the one that embeds and bills means chunk sizes don't mean what they say.
+- *UTC rollover for `query_counts`, for consistency* — rejected; consistency would produce a misleading metric, and the metric is the whole point of M2.
+- *Integer `section` values in citations* — rejected; headings are more useful to a student than a chunk number, and a single string type handles both.
+
+**Revisit if:** M1 real-content testing shows `TOP_K = 5` is too many (context bloat) or too few (missed matches). The others should not need revisiting.
+
+---
+
+## D-009 — Two API routes, not one
+
+**Status:** decided
+**Decision:** `/api/ask` (product) and `/api/heartbeat` (cron-invoked keepalive) are separate routes.
+**Rationale:** `architecture.md` originally described "the one API route", but Vercel Cron works by making an HTTP request to a route — so the cron needs one. Keeping it separate means nothing about the keepalive can affect the product path.
+**Rejected:**
+- *Folding the heartbeat into `/api/ask`* — rejected; couples infrastructure to the product path for no benefit.
+- *A standalone script outside the app* — rejected; Vercel Cron invokes routes, not scripts, so this wouldn't work in this deployment model.
+
+**Revisit if:** the heartbeat moves to GitHub Actions hitting Supabase's REST API directly, in which case the route becomes unnecessary.
