@@ -6,6 +6,19 @@ Every session writes an entry, including failed sessions. "Noticed, did not fix"
 
 ---
 
+## 2026-09-04 — Antigravity / Session 3 — M0
+
+**Milestone:** M0 — Correctness skeleton.
+**Tasks attempted:** M0-SETUP-01.
+**Landed:** Initialized Next.js 15.5.25 (App Router, TypeScript 5.x, ESLint 9 Flat Config, Vanilla CSS) repository structure. Created `package.json`, `tsconfig.json`, `next.config.ts`, `eslint.config.mjs`, `app/layout.tsx`, `app/page.tsx`, `app/globals.css`, and updated `.gitignore`. Verified clean `npm run build` and `npm run lint`.
+**Did not land:** Automated Vercel CLI link requires interactive device login; Vercel project can be imported directly via GitHub (`Pushkar0997/Smriti`) or via `vercel link`.
+**Blockers:** None for code progress. Vercel project connection/deploy needs dashboard link or Vercel login before M0-DEPLOY-01.
+**Noticed, did not fix:** Local environment has no Vercel authentication token or session stored.
+**Spec changes:** Ticked M0-SETUP-01 in `spec/tasks.md`.
+**Next action:** M0-SETUP-02 — Create Supabase project, enable pgvector extension, and create documents/chunks/query_counts tables per `architecture.md` §3.
+
+---
+
 ## 2026-09-04 — Claude (chat) / Session 1 + 2 — Pre-M0
 
 **Milestone:** Pre-M0 — spec written, nothing built yet.
