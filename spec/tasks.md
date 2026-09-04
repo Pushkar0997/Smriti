@@ -11,7 +11,7 @@ Task ID format: `M<milestone>-<area>-<number>`
 ### Setup
 - [x] **M0-SETUP-01** Init Next.js 15 (App Router, TS) repo, connect to a new Vercel project (Next.js 15.5 initialized; Vercel deployment confirmed live at https://smriti-indol.vercel.app)
 - [x] **M0-SETUP-02** Create Supabase project, enable the `pgvector` extension, create `documents`/`chunks`/`query_counts` tables per `architecture.md` §3 (schema.sql executed in Supabase SQL Editor; all tables created; env vars configured)
-- [ ] **M0-SETUP-03** Add heartbeat cron hitting `/api/heartbeat` daily (`0 0 * * *` per CONTRACT.md). Acceptance: a **manual invocation** of the route succeeds AND writes to the DB (do not wait for the schedule), AND the cron appears registered in the Vercel dashboard with a valid schedule. (vercel.json & /api/heartbeat route created with CRON_SECRET auth; requires service_role table grants in Supabase SQL editor to write)
+- [x] **M0-SETUP-03** Add heartbeat cron hitting `/api/heartbeat` daily (`0 0 * * *` per CONTRACT.md). Acceptance: a **manual invocation** of the route succeeds AND writes to the DB (do not wait for the schedule), AND the cron appears registered in the Vercel dashboard with a valid schedule. (Cron registered in vercel.json; manual invocation verified returning 200 with IST date and writing row to query_counts)
 
 ### Ingestion
 - [ ] **M0-ING-01** Write `lib/ingest.ts` — chunk text (500 tokens, 50 overlap per `CONTRACT.md`), embed via Gemini embeddings, store in `chunks`

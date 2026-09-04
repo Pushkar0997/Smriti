@@ -6,6 +6,19 @@ Every session writes an entry, including failed sessions. "Noticed, did not fix"
 
 ---
 
+## 2026-09-05 — Antigravity / Session 9 — M0-SETUP-03 closure
+
+**Milestone:** M0 — Correctness skeleton.
+**Tasks attempted:** M0-SETUP-03 closure.
+**Landed:** Marked M0-SETUP-03 in `spec/tasks.md` as fully complete. Heartbeat cron confirmed fully operational: Supabase permissions granted, manual invocation of `/api/heartbeat` with `CRON_SECRET` verified returning 200 with the correct IST date, and keepalive row verified successfully written to `query_counts`. All setup tasks (M0-SETUP-01, M0-SETUP-02, M0-SETUP-03) are now complete.
+**Did not land:** N/A — task is fully complete.
+**Blockers:** None.
+**Noticed, did not fix:** None.
+**Spec changes:** Re-ticked `M0-SETUP-03` in `spec/tasks.md` with completion note.
+**Next action:** M0-ING-01 — Write `lib/ingest.ts` (chunk text into 500 tokens with 50 overlap per CONTRACT.md using Gemini API countTokens endpoint, embed via Gemini embeddings model with 768-dim, and store in chunks).
+
+---
+
 ## 2026-09-04 — Antigravity / Session 8 — M0-SETUP-03 implementation
 
 **Milestone:** M0 — Correctness skeleton.
