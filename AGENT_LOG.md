@@ -6,6 +6,19 @@ Every session writes an entry, including failed sessions. "Noticed, did not fix"
 
 ---
 
+## 2026-09-04 — Antigravity / Session 6 — M0-SETUP-02 repo setup
+
+**Milestone:** M0 — Correctness skeleton.
+**Tasks attempted:** M0-SETUP-02 (repo-side implementation).
+**Landed:** Installed `@supabase/supabase-js`. Created `supabase/schema.sql` defining pgvector extension enablement, `documents`, `chunks`, and `query_counts` tables per `architecture.md` §3 and `CONTRACT.md`, plus indexes (including HNSW vector cosine search index), RLS enablement, `match_chunks` similarity search RPC, and atomic `increment_query_count` RPC. Created `lib/supabase.ts` with database row types and admin client helper. Verified clean `npm run build` and `npm run lint`.
+**Did not land:** Live execution of SQL migration in Supabase and setting environment variables (`NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`), which requires Pushkar's manual Supabase project creation.
+**Blockers:** Manual project creation in Supabase and executing `supabase/schema.sql` in the SQL Editor.
+**Noticed, did not fix:** `.env.local` and Vercel project environment variables need the Supabase URL and service role key once the project is created.
+**Spec changes:** Updated `spec/tasks.md` with status note for `M0-SETUP-02`.
+**Next action:** Pushkar creates the Supabase project, executes `supabase/schema.sql`, and sets `NEXT_PUBLIC_SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` in `.env.local` and Vercel. Once verified, re-tick M0-SETUP-02 and proceed to M0-SETUP-03.
+
+---
+
 ## 2026-09-04 — Antigravity / Session 5 — M0-SETUP-01 closure
 
 **Milestone:** M0 — Correctness skeleton.
