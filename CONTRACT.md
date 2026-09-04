@@ -65,7 +65,7 @@ TOP_K                = 5
 CHUNK_SIZE_TOKENS    = 500
 CHUNK_OVERLAP_TOKENS = 50
 EMBEDDING_DIM         = 768
-HEARTBEAT_INTERVAL_DAYS = 3        # must stay under Supabase's 7-day pause window
+HEARTBEAT_INTERVAL_DAYS = 1        # daily — Vercel Hobby's cron floor is once/day anyway, and daily gives more margin under Supabase's 7-day pause than every-3-days did, for free       # must stay under Supabase's 7-day pause window
 ```
 
 ---
