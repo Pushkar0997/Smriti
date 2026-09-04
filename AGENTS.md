@@ -45,7 +45,7 @@ Nothing in this stack may incur a per-request or monthly cost. Free tiers only (
 | Framework | Next.js, App Router | 15.x |
 | Hosting | Vercel (free/Hobby tier) | — |
 | Database / vector store | Supabase — Postgres + pgvector | current stable |
-| LLM | Gemini 2.0/2.5 Flash-Lite via Google AI Studio (free tier) | see `architecture.md` for current model name — verify against live AI Studio docs, names shift |
+| LLM | The lightest/cheapest free-tier Gemini text model — NOT Gemini 3.8 Flash, see D-007 | verify current model name live against AI Studio's model list before M0-RAG-03 — names and lineup shift fast, most recently with 3.8 Flash's Sept 2, 2026 release |
 | Embeddings | Gemini embedding model, 768-dim (MRL-scaled) | see `architecture.md` |
 | Auth | None at M0 — a single shared access link/code gates the test group, not a user account system |
 

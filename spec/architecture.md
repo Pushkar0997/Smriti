@@ -8,7 +8,7 @@
 | Framework | Next.js, App Router | 15.x | Single deploy target on Vercel; API routes keep the Gemini key server-side. |
 | Hosting | Vercel | Hobby (free) tier | Zero-cost, git-push deploys, built-in one-click rollback. |
 | Database / vector store | Supabase (Postgres + pgvector) | current stable | Free tier covers this project's scale by a wide margin (500MB vs. one subject's worth of text). |
-| LLM | Gemini Flash-Lite, Google AI Studio free tier | verify current model name live — names shift (e.g. `gemini-2.0-flash-lite` or successor) | Pro models left the free tier in April 2026; Flash-Lite has the higher RPM ceiling of the remaining free options, which matters more than RPD here (see D-006). |
+| LLM | The lightest/cheapest free-tier Gemini text model — deliberately not Gemini 3.8 Flash | verify current model name live against AI Studio's model list before M0-RAG-03 | Pro models left the free tier in April 2026. Gemini 3.8 Flash (released Sept 2, 2026) is free-tier but tuned for long-horizon agentic reasoning and spends more tokens per request by design — wrong fit for a short grounded lookup where RPM is the binding constraint (see D-006, D-007). |
 | Embeddings | Gemini embedding model, 768-dim (MRL-scaled from 3072 default) | verify current model name live | Smaller dimension trades a little quality for storage/cost headroom, irrelevant at this scale but cheap to pin now. |
 | Auth | None — shared access link/code | — | A real accounts system is out of scope until the pilot proves people want this at all (see `product.md` non-goals). |
 | Scheduling | Vercel Cron (or GitHub Actions if Vercel Cron needs a paid plan — verify at build time) | — | Heartbeat ping every 3 days to dodge Supabase's 7-day inactivity pause. |

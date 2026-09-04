@@ -76,3 +76,18 @@ Every non-obvious decision, why, and what was rejected. **This file exists to st
 - *Gemini Pro* — not available on the free tier as of April 2026, ruled out by the ₹0/month hard constraint.
 
 **Revisit if:** the live AI Studio quota for the actual project shows materially different numbers than what was found via web research at spec time — Google does not publish one fixed table, so this should be checked, not assumed, before M0-RAG-03.
+
+**Superseded by:** D-007 — the specific model-name guessing here is stale as of Gemini 3.8 Flash's Sept 2, 2026 release; the RPM-over-RPD reasoning still holds and D-007 builds on it.
+
+---
+
+## D-007 — Avoid Gemini 3.8 Flash for this workload despite being the newest free-tier model
+
+**Status:** decided
+**Decision:** Do not default to Gemini 3.8 Flash, even though it's current and free-tier. Use the lightest/cheapest free-tier text model available in AI Studio at build time — verify live, do not assume a name.
+**Rationale:** 3.8 Flash is tuned for long-horizon agentic/coding reasoning and spends meaningfully more "thinking tokens" per request by design — Google's own guidance recommends staying on a lighter tier for efficiency-first, high-volume, latency-sensitive workloads. Smriti's query pattern (a short grounded lookup, RPM is the binding constraint per D-006) is exactly that case, not the complex-reasoning case 3.8 Flash is built for. Paying its reasoning cost for a task that doesn't need it works directly against the project's own quota scarcity.
+**Rejected:**
+- *Gemini 3.8 Flash at medium reasoning effort* — rejected; burns more quota than a grounded-lookup task requires, for capability this project doesn't use.
+- *Pinning an exact lighter-tier model name now* — rejected; the free-tier lineup and naming has shifted repeatedly in the weeks before this was written. Pin at build time against the live AI Studio model list instead.
+
+**Revisit if:** the live model list at build time shows the lighter tier is gone, or M1 real-content testing shows answer quality genuinely needs 3.8 Flash's extra reasoning — unlikely for a grounded-lookup task, but check before assuming.
