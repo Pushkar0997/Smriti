@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "test": "tsx --test tests/**/*.test.ts",
     "ingest:fixture": "tsx scripts/ingest_fixture.ts"
   },
   "dependencies": {

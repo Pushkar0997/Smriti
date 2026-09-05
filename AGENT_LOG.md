@@ -6,6 +6,28 @@ Every session writes an entry, including failed sessions. "Noticed, did not fix"
 
 ---
 
+## 2026-09-05 — Antigravity / Session 14 — M0-RAG-02 INV-1 ground-check implementation
+
+**Milestone:** M0 — Correctness skeleton.
+**Tasks attempted:** M0-RAG-02.
+**Landed:**
+- Implemented `NO_MATCH_RESPONSE` (`{ code: "NO_MATCH", message: "not in my material" } as const`), `formatCitations`, `groundCheck`, and pipeline orchestrator `executeGroundedQuery` in `lib/retrieval.ts`.
+- Enforced strict no-third-path architecture: `executeGroundedQuery` runs `groundCheck` on candidate chunks against `SIMILARITY_THRESHOLD = 0.65`. If top chunk is below threshold (or empty), it returns `NO_MATCH_RESPONSE` immediately; the LLM `generateAnswer` function is never called. If top chunk >= 0.65, qualifying chunks and citations are passed to `generateAnswer`, returning `{ answer, citations }`.
+- Added test runner script `"test": "tsx --test tests/**/*.test.ts"` in `package.json`.
+- Created comprehensive test suite `tests/inv-1.test.ts` for INV-1-T (10/10 tests pass via `npm test`):
+  - Unit tests: verified empty chunks return `NO_MATCH_RESPONSE`, low scores return `NO_MATCH_RESPONSE`, top chunk score is strictly evaluated (0.6499 fails, 0.65 passes), citations deduplicate identical document/section labels.
+  - No-third-path unit tests: verified mock LLM is never called when retrieval fails or is below threshold; verified retrieval errors bubble up without falling through to LLM (Negative Test N-02); verified LLM is called exactly once when match passes.
+  - Live fixture integration tests against persisted DBMS fixture: verified matching DBMS query passes ground-check and invokes LLM mock with citations; verified cellular-respiration query (scoring 0.4576) triggers `NO_MATCH_RESPONSE` with 0 calls to LLM mock.
+- Updated `spec/evals.md` (calibrated threshold to 0.65 per D-011 and marked INV-1-T passing) and marked `M0-RAG-02` complete in `spec/tasks.md`.
+- Verified clean typecheck (`tsc --noEmit`), lint (`npm run lint`), test suite (`npm test`), and production build (`npm run build`).
+**Did not land:** N/A — task is fully complete.
+**Blockers:** None.
+**Noticed, did not fix:** None.
+**Spec changes:** Marked `M0-RAG-02` complete in `spec/tasks.md`, updated `spec/evals.md`.
+**Next action:** M0-RAG-03 — Wire `/api/ask`: retrieval → ground-check → LLM call with retrieved context (model per D-007 — verify the lightest free-tier model live against AI Studio, do not assume a name) → return `{ answer, citations }`.
+
+---
+
 ## 2026-09-05 — Antigravity / Session 13 — SIMILARITY_THRESHOLD calibration (0.75 -> 0.65)
 
 **Milestone:** M0 — Correctness skeleton.
