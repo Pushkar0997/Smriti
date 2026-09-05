@@ -118,3 +118,18 @@ Every non-obvious decision, why, and what was rejected. **This file exists to st
 - *A standalone script outside the app* — rejected; Vercel Cron invokes routes, not scripts, so this wouldn't work in this deployment model.
 
 **Revisit if:** the heartbeat moves to GitHub Actions hitting Supabase's REST API directly, in which case the route becomes unnecessary.
+
+---
+
+## D-010 — Official SDK @google/genai and gemini-embedding-001 for embeddings & token counting
+
+**Status:** decided
+**Decision:** Installed `@google/genai` (current official Google GenAI SDK) and selected `gemini-embedding-001` as the verified embedding model for chunk ingestion, token counting, and query retrieval.
+**Rationale:** `gemini-embedding-001` is Google's stable text embedding model in the Gemini API (updated June 2025). It explicitly supports 768 output dimensions via Matryoshka Representation Learning (MRL), natively supports `taskType: "RETRIEVAL_DOCUMENT"` and `RETRIEVAL_QUERY`, and supports the `countTokens` endpoint directly on the exact same model that embeds (satisfying CONTRACT.md's requirement that the chunking tokenizer matches the embedding model).
+**Rejected:**
+- *gemini-embedding-2* — rejected for text-only RAG because it is primarily a multimodal model that aggregates multiple inputs into a single embedding, does not support `taskType` config, and requires prompt task prefix formatting.
+- *Legacy SDK @google/generative-ai* — deprecated by Google in favor of `@google/genai`.
+- *Character or whitespace heuristic token counting* — rejected per CONTRACT.md pinned convention.
+
+**Revisit if:** Google updates or deprecates `gemini-embedding-001` or introduces a text-specific embedding model with better performance/quota limits.
+

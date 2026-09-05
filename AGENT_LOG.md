@@ -6,6 +6,19 @@ Every session writes an entry, including failed sessions. "Noticed, did not fix"
 
 ---
 
+## 2026-09-05 — Antigravity / Session 10 — M0-ING-01 implementation
+
+**Milestone:** M0 — Correctness skeleton.
+**Tasks attempted:** M0-ING-01.
+**Landed:** Installed `@google/genai`. Verified live Google AI Studio documentation for embedding models and selected `gemini-embedding-001` (stable text embedding model, June 2025, supporting 768-dim MRL output dimensionality, native `RETRIEVAL_DOCUMENT` task type, and `countTokens` support on the exact same model). Created `lib/gemini.ts` as thin wrapper managing client lifecycle, `countTokens`, `embedChunk`, `embedChunks`, and `embedQuery`. Created `lib/ingest.ts` implementing `chunkText` (500 token ceiling, best-effort paragraph splitting, mid-paragraph fallback, 50-token overlap, markdown heading / "chunk N" label detection) and `ingestDocument` (inserts document and chunks into Supabase pgvector). Verified chunking logic with mock tests offline, verified clean typecheck (`tsc --noEmit`), lint (`npm run lint`), and Next.js production build (`npm run build`). Performed one deliberate live end-to-end verification probe against Gemini and Supabase: confirmed countTokens (9 tokens), 768-dim embedding generation, database insertion into `documents` and `chunks`, and clean cascade deletion. Recorded D-010 in `spec/decisions.md` and marked `M0-ING-01` complete in `spec/tasks.md`.
+**Did not land:** N/A — task is fully complete.
+**Blockers:** None.
+**Noticed, did not fix:** None.
+**Spec changes:** Added D-010 in `spec/decisions.md` documenting `@google/genai` and `gemini-embedding-001`. Marked `M0-ING-01` complete in `spec/tasks.md`.
+**Next action:** M0-ING-02 — Load a test fixture of exactly 5 made-up Q&A pairs (not real PYQs) through the ingestion path, with at least one pair spanning 2+ chunks to exercise overlap behavior.
+
+---
+
 ## 2026-09-05 — Antigravity / Session 9 — M0-SETUP-03 closure
 
 **Milestone:** M0 — Correctness skeleton.

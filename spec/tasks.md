@@ -14,7 +14,7 @@ Task ID format: `M<milestone>-<area>-<number>`
 - [x] **M0-SETUP-03** Add heartbeat cron hitting `/api/heartbeat` daily (`0 0 * * *` per CONTRACT.md). Acceptance: a **manual invocation** of the route succeeds AND writes to the DB (do not wait for the schedule), AND the cron appears registered in the Vercel dashboard with a valid schedule. (Cron registered in vercel.json; manual invocation verified returning 200 with IST date and writing row to query_counts)
 
 ### Ingestion
-- [ ] **M0-ING-01** Write `lib/ingest.ts` — chunk text (500 tokens, 50 overlap per `CONTRACT.md`), embed via Gemini embeddings, store in `chunks`
+- [x] **M0-ING-01** Write `lib/ingest.ts` — chunk text (500 tokens, 50 overlap per `CONTRACT.md`), embed via Gemini embeddings, store in `chunks` (Implemented lib/gemini.ts and lib/ingest.ts using verified model gemini-embedding-001 with 768-dim MRL embeddings and Gemini countTokens tokenizer; end-to-end verified with live API and Supabase pgvector)
 - [ ] **M0-ING-02** Load a test fixture of **exactly 5 made-up Q&A pairs** (not real PYQs) through the ingestion path. At least one pair must be long enough to span 2+ chunks, so overlap behaviour is actually exercised.
 
 ### Retrieval and answering
