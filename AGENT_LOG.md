@@ -6,6 +6,19 @@ Every session writes an entry, including failed sessions. "Noticed, did not fix"
 
 ---
 
+## 2026-09-05 — Antigravity / Session 13 — SIMILARITY_THRESHOLD calibration (0.75 -> 0.65)
+
+**Milestone:** M0 — Correctness skeleton.
+**Tasks attempted:** SIMILARITY_THRESHOLD calibration via D-011.
+**Landed:** Tested 3 loosely-paraphrased queries against the persisted fixture at `matchThreshold = 0.0` ("why does write-ahead logging need steal and no-force" scored 0.7328, "what's the difference between strict and rigorous two-phase locking" scored 0.7583, "when can you use a sparse index" scored 0.7184). Confirmed the provisional 0.75 threshold was rejecting genuine matches simply due to phrasing variations, while off-topic queries scored 0.4576. Updated `SIMILARITY_THRESHOLD` from 0.75 to 0.65 in `CONTRACT.md` and `lib/retrieval.ts`. Added decision entry D-011 to `spec/decisions.md` and marked D-002 as superseded by D-011 for the threshold value. Updated `spec/tasks.md` for M0-RAG-02. Verified clean lint (`npm run lint`), typecheck (`tsc --noEmit`), and production build (`npm run build`).
+**Did not land:** N/A.
+**Blockers:** None.
+**Noticed, did not fix:** None.
+**Spec changes:** Updated `CONTRACT.md`, `spec/decisions.md` (marked D-002 superseded by D-011, added D-011), and `spec/tasks.md` (M0-RAG-02 threshold to 0.65).
+**Next action:** M0-RAG-02 — Implement the INV-1 ground-check: if top score < `SIMILARITY_THRESHOLD` (0.65), return the fixed "not in my material" response and skip the LLM call entirely.
+
+---
+
 ## 2026-09-05 — Antigravity / Session 12 — M0-RAG-01 retrieval implementation
 
 **Milestone:** M0 — Correctness skeleton.

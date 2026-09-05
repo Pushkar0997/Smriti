@@ -20,13 +20,13 @@ Every non-obvious decision, why, and what was rejected. **This file exists to st
 
 ## D-002 — Grounded-only answers, no ungrounded fallback (INV-1)
 
-**Status:** decided
+**Status:** decided (threshold superseded by D-011)
 **Decision:** Low-confidence or empty retrieval returns a fixed "not in my material" message. The LLM is never called to "still be helpful" when retrieval fails.
 **Rationale:** The failure mode this blocks — a hallucinated but plausible-sounding wrong answer, given to a real junior before a real exam, under Pushkar's name — is expensive in a way that "the bot said it didn't know" never is.
 **Rejected:**
 - *Always answer, with a disclaimer when confidence is low* — rejected because disclaimers get skimmed past under exam-week time pressure; a hard refusal is safer than a soft warning here.
 
-**Revisit if:** M1 spot-checking (M1-VERIFY-01) shows the 0.75 threshold is miscalibrated — too strict (good matches get rejected) or too loose (bad matches get through). The threshold itself is provisional; the never-guess principle is not.
+**Revisit if:** M1 spot-checking (M1-VERIFY-01) shows the similarity threshold is miscalibrated — too strict (good matches get rejected) or too loose (bad matches get through). Note: The provisional 0.75 threshold was superseded by D-011 (calibrated to 0.65). The never-guess principle is not provisional.
 
 ---
 
@@ -132,4 +132,17 @@ Every non-obvious decision, why, and what was rejected. **This file exists to st
 - *Character or whitespace heuristic token counting* — rejected per CONTRACT.md pinned convention.
 
 **Revisit if:** Google updates or deprecates `gemini-embedding-001` or introduces a text-specific embedding model with better performance/quota limits.
+
+---
+
+## D-011 — Similarity threshold moved from 0.75 to 0.65
+
+**Status:** decided (supersedes D-002's provisional 0.75 threshold)
+**Decision:** `SIMILARITY_THRESHOLD` moved from 0.75 to 0.65 in `CONTRACT.md`'s exact values and in `lib/retrieval.ts`'s exported constant.
+**Rationale:** Threshold moved from 0.75 to 0.65 based on M0-RAG-01 paraphrase testing showing real matches scoring as low as 0.7184 (e.g. "when can you use a sparse index" scored 0.7184; "why does write-ahead logging need steal and no-force" scored 0.7328) while off-topic queries scored 0.4576 — 0.75 was rejecting genuine matches simply due to phrasing variation. 0.65 provides ample margin above the ~0.46 off-topic noise floor while safely admitting valid paraphrased queries.
+**Rejected:**
+- *Retaining 0.75* — rejected because it rejected genuine matches when queries didn't closely match source phrasing.
+- *Lowering threshold below 0.60* — rejected as unnecessarily loose; 0.65 preserves robust separation (~0.19) above off-topic noise (~0.46).
+
+**Revisit if:** M1 real-content evaluation (M1-VERIFY-01) shows false positives or false negatives requiring fine-tuning across the pilot subject corpus.
 

@@ -51,7 +51,7 @@ Precedence: this file outranks every other document. If something here conflicts
 | Retrieval top-k | `TOP_K = 5`. Retrieve the 5 highest-scoring chunks; the INV-1 ground-check applies to the **top-scoring** chunk only (if the best match is below threshold, the fallback fires regardless of what the other four scored). All chunks above threshold are passed to the LLM as context and cited. |
 | Error shape | `{ code: SCREAMING_SNAKE, message: string }` — e.g. `{ code: "NO_MATCH", message: "not in my material" }`. |
 | Naming | camelCase in TypeScript, snake_case in Postgres/Supabase. |
-| Similarity threshold | Cosine similarity ≥ 0.75 counts as a match for INV-1. Below this, INV-1's fallback fires. (Provisional — revisit once M1 real content shows what threshold actually separates good from bad matches; see D-002.) |
+| Similarity threshold | Cosine similarity ≥ 0.65 counts as a match for INV-1. Below this, INV-1's fallback fires. (Calibrated from 0.75 to 0.65 via D-011; revisit after M1 content lands.) |
 | Units | Embedding dimension: 768 (Gemini embedding model, MRL-scaled down from the 3072 default for storage/cost). |
 | Encoding | UTF-8, NFC normalised, for all ingested text. |
 
@@ -60,7 +60,7 @@ Precedence: this file outranks every other document. If something here conflicts
 ## Exact values
 
 ```
-SIMILARITY_THRESHOLD = 0.75        # provisional, see D-002 — revisit after M1 content lands
+SIMILARITY_THRESHOLD = 0.65        # calibrated from 0.75 per D-011 — revisit after M1 content lands
 TOP_K                = 5
 CHUNK_SIZE_TOKENS    = 500
 CHUNK_OVERLAP_TOKENS = 50

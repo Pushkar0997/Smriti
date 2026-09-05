@@ -6,7 +6,7 @@ import { embedQuery } from "./gemini";
  * Pinned Retrieval Constants per CONTRACT.md
  */
 export const TOP_K = 5;
-export const SIMILARITY_THRESHOLD = 0.75;
+export const SIMILARITY_THRESHOLD = 0.65;
 
 export interface RetrievedChunk {
   id: string;
@@ -27,7 +27,7 @@ export interface RetrieveOptions {
  * Embed an incoming user query and perform vector cosine similarity search in Supabase pgvector.
  *
  * - Uses embedQuery from lib/gemini.ts (RETRIEVAL_QUERY task type, 768 dimensions).
- * - Invokes match_chunks RPC in Supabase, passing TOP_K = 5 and SIMILARITY_THRESHOLD = 0.75 per CONTRACT.md.
+ * - Invokes match_chunks RPC in Supabase, passing TOP_K = 5 and SIMILARITY_THRESHOLD = 0.65 per CONTRACT.md (D-011).
  * - Returns top-k chunks with their similarity scores and document titles.
  */
 export async function retrieveChunks(

@@ -19,7 +19,7 @@ Task ID format: `M<milestone>-<area>-<number>`
 
 ### Retrieval and answering
 - [x] **M0-RAG-01** Write `lib/retrieval.ts` — embed the incoming query, pgvector similarity search, return top-k chunks with scores (Implemented retrieveChunks calling embedQuery and Supabase match_chunks RPC with TOP_K=5 and SIMILARITY_THRESHOLD=0.75; verified against persisted DBMS fixture with matching queries scoring >= 0.75 and unrelated queries scoring < 0.46)
-- [ ] **M0-RAG-02** Implement the INV-1 ground-check: if top score < `SIMILARITY_THRESHOLD` (0.75), return the fixed "not in my material" response and skip the LLM call entirely
+- [ ] **M0-RAG-02** Implement the INV-1 ground-check: if top score < `SIMILARITY_THRESHOLD` (0.65 per D-011), return the fixed "not in my material" response and skip the LLM call entirely
 - [ ] **M0-RAG-03** Wire `/api/ask`: retrieval → ground-check → LLM call with retrieved context (model per D-007 — verify the lightest free-tier model live against AI Studio, do not assume a name) → return `{ answer, citations }`
 
 ### UI and deploy
