@@ -18,7 +18,7 @@ Task ID format: `M<milestone>-<area>-<number>`
 - [x] **M0-ING-02** Load a test fixture of **exactly 5 made-up Q&A pairs** (not real PYQs) through the ingestion path. At least one pair must be long enough to span 2+ chunks, so overlap behaviour is actually exercised. (Created fixtures/test_fixture.json, fixtures/test_fixture.md, and scripts/ingest_fixture.ts; ingested 5 made-up DBMS Q&A pairs into Supabase yielding 7 chunks; Question 3 spanned 3+ chunks exercising the 50-token overlap; verified stored in pgvector)
 
 ### Retrieval and answering
-- [ ] **M0-RAG-01** Write `lib/retrieval.ts` — embed the incoming query, pgvector similarity search, return top-k chunks with scores
+- [x] **M0-RAG-01** Write `lib/retrieval.ts` — embed the incoming query, pgvector similarity search, return top-k chunks with scores (Implemented retrieveChunks calling embedQuery and Supabase match_chunks RPC with TOP_K=5 and SIMILARITY_THRESHOLD=0.75; verified against persisted DBMS fixture with matching queries scoring >= 0.75 and unrelated queries scoring < 0.46)
 - [ ] **M0-RAG-02** Implement the INV-1 ground-check: if top score < `SIMILARITY_THRESHOLD` (0.75), return the fixed "not in my material" response and skip the LLM call entirely
 - [ ] **M0-RAG-03** Wire `/api/ask`: retrieval → ground-check → LLM call with retrieved context (model per D-007 — verify the lightest free-tier model live against AI Studio, do not assume a name) → return `{ answer, citations }`
 

@@ -6,6 +6,19 @@ Every session writes an entry, including failed sessions. "Noticed, did not fix"
 
 ---
 
+## 2026-09-05 — Antigravity / Session 12 — M0-RAG-01 retrieval implementation
+
+**Milestone:** M0 — Correctness skeleton.
+**Tasks attempted:** M0-RAG-01.
+**Landed:** Created `lib/retrieval.ts` exporting `TOP_K = 5`, `SIMILARITY_THRESHOLD = 0.75`, `RetrievedChunk`, `RetrieveOptions`, and `retrieveChunks(query, options)`. Uses `embedQuery` from `lib/gemini.ts` (RETRIEVAL_QUERY task type, 768-dim) and invokes the `match_chunks` RPC in Supabase passing `match_count: 5` and `match_threshold: 0.75` pinned per `CONTRACT.md`. Mapped returned chunks to camelCase structures with document title, section label, content, and similarity scores. Removed unused import in `scripts/ingest_fixture.ts`. Tested against the persisted DBMS test fixture: confirmed relevant queries (e.g. "Explain the ARIES recovery protocol and its three distinct phases" score 0.7651, "Explain Write Skew anomaly under Snapshot Isolation with an example" score 0.7555) pass the 0.75 threshold and return matching chunks; confirmed unrelated queries (e.g. "How does cellular respiration and the Krebs cycle produce ATP in mitochondria?" top raw score 0.4576) return 0 chunks at threshold 0.75. Confirmed clean lint (`npm run lint`), clean typecheck (`tsc --noEmit`), and clean production build (`npm run build`). Marked `M0-RAG-01` complete in `spec/tasks.md`.
+**Did not land:** N/A — task is fully complete.
+**Blockers:** None.
+**Noticed, did not fix:** `match_chunks` RPC filters rows via SQL `WHERE 1 - (chunks.embedding <=> query_embedding) >= match_threshold`; passing default threshold 0.75 returns only chunks matching or exceeding the threshold. Added `options.matchThreshold` override in `retrieveChunks` allowing callers (such as test suites) to inspect raw similarity scores when needed.
+**Spec changes:** Marked `M0-RAG-01` complete in `spec/tasks.md`.
+**Next action:** M0-RAG-02 — Implement the INV-1 ground-check: if top score < `SIMILARITY_THRESHOLD` (0.75), return the fixed "not in my material" response and skip the LLM call entirely.
+
+---
+
 ## 2026-09-05 — Antigravity / Session 11 — M0-ING-02 fixture ingestion
 
 **Milestone:** M0 — Correctness skeleton.

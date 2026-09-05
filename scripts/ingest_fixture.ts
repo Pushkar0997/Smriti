@@ -1,6 +1,5 @@
 import fs from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { ingestDocument } from "../lib/ingest";
 import { getSupabaseAdmin } from "../lib/supabase";
 
