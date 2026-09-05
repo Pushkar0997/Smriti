@@ -15,7 +15,7 @@ Task ID format: `M<milestone>-<area>-<number>`
 
 ### Ingestion
 - [x] **M0-ING-01** Write `lib/ingest.ts` — chunk text (500 tokens, 50 overlap per `CONTRACT.md`), embed via Gemini embeddings, store in `chunks` (Implemented lib/gemini.ts and lib/ingest.ts using verified model gemini-embedding-001 with 768-dim MRL embeddings and Gemini countTokens tokenizer; end-to-end verified with live API and Supabase pgvector)
-- [ ] **M0-ING-02** Load a test fixture of **exactly 5 made-up Q&A pairs** (not real PYQs) through the ingestion path. At least one pair must be long enough to span 2+ chunks, so overlap behaviour is actually exercised.
+- [x] **M0-ING-02** Load a test fixture of **exactly 5 made-up Q&A pairs** (not real PYQs) through the ingestion path. At least one pair must be long enough to span 2+ chunks, so overlap behaviour is actually exercised. (Created fixtures/test_fixture.json, fixtures/test_fixture.md, and scripts/ingest_fixture.ts; ingested 5 made-up DBMS Q&A pairs into Supabase yielding 7 chunks; Question 3 spanned 3+ chunks exercising the 50-token overlap; verified stored in pgvector)
 
 ### Retrieval and answering
 - [ ] **M0-RAG-01** Write `lib/retrieval.ts` — embed the incoming query, pgvector similarity search, return top-k chunks with scores

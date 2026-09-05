@@ -6,6 +6,19 @@ Every session writes an entry, including failed sessions. "Noticed, did not fix"
 
 ---
 
+## 2026-09-05 — Antigravity / Session 11 — M0-ING-02 fixture ingestion
+
+**Milestone:** M0 — Correctness skeleton.
+**Tasks attempted:** M0-ING-02.
+**Landed:** Created `fixtures/test_fixture.json` and `fixtures/test_fixture.md` containing exactly 5 made-up DBMS Q&A pairs (not real PYQs). Configured Question 3 (ARIES crash recovery protocol) with 1,115 tokens to span across multiple chunks and strictly exercise the 50-token overlap logic. Added `scripts/ingest_fixture.ts` and `npm run ingest:fixture` script in `package.json`. Ingested the test fixture into Supabase pgvector (`title: "DBMS-Test-Fixture.md"`), producing 7 chunks total (each strictly <= 500 tokens). Confirmed Question 3 spans across chunks 3, 4, and 5 (and overlapping into adjacent chunks), with 50-token overlap between chunks. Verified 7 chunks persisted in Supabase pgvector table. Verified clean typecheck (`tsc --noEmit`), lint (`npm run lint`), and Next.js production build (`npm run build`). Marked `M0-ING-02` complete in `spec/tasks.md`.
+**Did not land:** N/A — task is fully complete.
+**Blockers:** None.
+**Noticed, did not fix:** None.
+**Spec changes:** Marked `M0-ING-02` complete in `spec/tasks.md`.
+**Next action:** M0-RAG-01 — Write `lib/retrieval.ts` (embed incoming query, pgvector similarity search, return top-k chunks with scores).
+
+---
+
 ## 2026-09-05 — Antigravity / Session 10 — M0-ING-01 implementation
 
 **Milestone:** M0 — Correctness skeleton.

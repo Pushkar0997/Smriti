@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "ingest:fixture": "tsx scripts/ingest_fixture.ts"
   },
   "dependencies": {
     "@google/genai": "^2.21.0",
@@ -22,6 +23,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "15.5.25",
+    "tsx": "^4.23.13",
     "typescript": "^5"
   }
 }
