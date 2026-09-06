@@ -146,3 +146,17 @@ Every non-obvious decision, why, and what was rejected. **This file exists to st
 
 **Revisit if:** M1 real-content evaluation (M1-VERIFY-01) shows false positives or false negatives requiring fine-tuning across the pilot subject corpus.
 
+---
+
+## D-012 — Gemini 3.5 Flash-Lite pinned as text generation model for M0-RAG-03
+
+**Status:** decided (builds on D-006 and D-007)
+**Decision:** Pinned `gemini-3.5-flash-lite` as the text generation model in `lib/gemini.ts` for grounded answer generation via `generateGroundedAnswer`.
+**Rationale:** Verified live against Google AI Studio API at build time. `gemini-2.5-flash-lite` returned a 404 deprecation notice (`"This model models/gemini-2.5-flash-lite is no longer available to new users. Please update your code to use models/gemini-3.5-flash-lite for the latest features and improvements."`). Evaluated `gemini-3.5-flash-lite` against `gemini-3.1-flash-lite` and `gemini-3.8-flash`: `gemini-3.5-flash-lite` is Google's recommended Flash-Lite successor, is in the high-RPM efficiency tier, incurs zero thinking token overhead on direct grounded requests (`candidatesTokenCount: 4` on test query), and complies fully with the zero recurring cost constraint (INV-4).
+**Rejected:**
+- *gemini-3.8-flash* — rejected per D-007 due to heavy thinking-token overhead designed for complex reasoning/coding, which is unneeded for short grounded lookups and burns burst quota.
+- *gemini-2.5-flash-lite* — rejected because it returned HTTP 404 / NOT_FOUND for new API keys in AI Studio.
+- *gemini-3.1-flash-lite* — rejected in favor of 3.5-flash-lite which is Google's explicitly recommended active production flash-lite endpoint.
+
+**Revisit if:** Google updates or deprecates `gemini-3.5-flash-lite` or changes free-tier limits.
+

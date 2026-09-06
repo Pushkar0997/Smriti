@@ -1,4 +1,5 @@
 import { GoogleGenAI } from "@google/genai";
+import type { RetrievedChunk } from "./retrieval";
 
 /**
  * Gemini Embedding Model & Configuration
@@ -153,4 +154,61 @@ export async function embedQuery(query: string): Promise<number[]> {
   }
 
   return embedding;
+}
+
+/**
+ * Gemini Text Generation Model
+ * Pinned per spec/architecture.md §1, D-006, D-007, and live Google AI Studio API verification:
+ * - gemini-3.5-flash-lite: Active Flash-Lite production model on Google AI Studio.
+ * - Lightest free-tier model with high RPM capacity and zero thinking-token overhead by default.
+ */
+export const GENERATION_MODEL = "gemini-3.5-flash-lite";
+
+/**
+ * System instruction enforcing the prompt-level half of INV-1 per spec/architecture.md §4b:
+ * - Model answers ONLY from the provided context chunks.
+ * - If the context doesn't contain the answer, say so explicitly rather than using general knowledge.
+ * - Must not invent exam questions, marks, or names not present in the context.
+ */
+export const GROUNDED_ANSWER_SYSTEM_INSTRUCTION = `You are Smriti, an academic study assistant answering exam preparation questions.
+Answer the user's question ONLY using the provided source context chunks.
+Rules:
+1. Rely strictly on the information in the provided context. If the context does not contain the answer, state clearly and explicitly that the material does not contain the answer rather than using outside or general knowledge.
+2. Do not invent, extrapolate, or hallucinate exam questions, marks, grading schemes, or professor names that are not present in the context.
+3. Be concise, direct, and academically precise.`;
+
+/**
+ * Generate a grounded answer from retrieved context chunks using the Gemini Flash-Lite model.
+ * Matches LLMGenerateFn signature: (query: string, contextChunks: RetrievedChunk[]) => Promise<string>
+ * Pinned per spec/architecture.md §4b & CONTRACT.md
+ */
+export async function generateGroundedAnswer(
+  query: string,
+  contextChunks: RetrievedChunk[]
+): Promise<string> {
+  const client = getGeminiClient();
+
+  const formattedContext = contextChunks
+    .map(
+      (chunk, index) =>
+        `--- BEGIN SOURCE CHUNK ${index + 1} [Document: ${chunk.documentTitle}, Section: ${chunk.sectionLabel}] ---\n${chunk.content}\n--- END SOURCE CHUNK ${index + 1} ---`
+    )
+    .join("\n\n");
+
+  const promptContent = `Provided Context:\n${formattedContext}\n\nUser Question: ${query}`;
+
+  const response = await client.models.generateContent({
+    model: GENERATION_MODEL,
+    contents: promptContent,
+    config: {
+      systemInstruction: GROUNDED_ANSWER_SYSTEM_INSTRUCTION,
+    },
+  });
+
+  const answer = response.text?.trim();
+  if (!answer) {
+    throw new Error("Gemini API returned an empty response text.");
+  }
+
+  return answer;
 }

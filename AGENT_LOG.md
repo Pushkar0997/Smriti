@@ -6,6 +6,29 @@ Every session writes an entry, including failed sessions. "Noticed, did not fix"
 
 ---
 
+## 2026-09-07 — Antigravity / Session 15 — M0-RAG-03 /api/ask wiring & live Gemini Flash-Lite generation
+
+**Milestone:** M0 — Correctness skeleton.
+**Tasks attempted:** M0-RAG-03.
+**Landed:**
+- Verified live Gemini generation models from Google AI Studio API: `gemini-2.5-flash-lite` returned HTTP 404 with explicit guidance to use `gemini-3.5-flash-lite`. Tested both `gemini-3.5-flash-lite` and `gemini-3.1-flash-lite`, confirming `gemini-3.5-flash-lite` has zero thinking-token overhead on direct grounded requests (`candidatesTokenCount: 4`). Documented in `spec/decisions.md` (D-012).
+- Added `GENERATION_MODEL = "gemini-3.5-flash-lite"`, prompt-level grounding system instruction (`GROUNDED_ANSWER_SYSTEM_INSTRUCTION` per `architecture.md` §4b), and `generateGroundedAnswer` matching `LLMGenerateFn` in `lib/gemini.ts`.
+- Created `app/api/ask/route.ts` as a thin wrapper: validates server-side `ACCESS_CODE` (accepting `x-access-code`, `Authorization: Bearer <CODE>`, or body `accessCode`/`access_code`), validates query presence, calls `executeGroundedQuery` from `lib/retrieval.ts`, strictly avoids logging raw query text (INV-3), and returns the `GroundedAnswerResult` shape.
+- Verified live against persisted DBMS fixture (`test_fixture.json`):
+  - Unauthorized request returned 401 `{ code: "UNAUTHORIZED", message: "Invalid or missing access code" }`.
+  - ARIES crash recovery query returned 200 with complete grounded multi-phase answer and citations referencing `DBMS-Test-Fixture.md`.
+  - Unrelated cellular respiration query returned 200 `{ code: "NO_MATCH", message: "not in my material" }` untouched by the LLM (0 LLM calls).
+- Updated `spec/architecture.md` Section 4 capability register marking built rows.
+- Ticked `M0-RAG-03` in `spec/tasks.md`.
+- Confirmed clean Next.js production build (`npm run build`) and test suite (`npm test`, 10/10 passing).
+**Did not land:** N/A — task is fully complete.
+**Blockers:** None.
+**Noticed, did not fix:** `tests/inv-1.test.ts` from Session 14 has 3 `no-explicit-any` ESLint errors when running standalone `eslint`; left untouched per "Do not modify files outside this task's scope." Next.js production build (`next build`) and test suite (`npm test`) pass cleanly with zero errors.
+**Spec changes:** Ticked `M0-RAG-03` in `spec/tasks.md`, updated `spec/architecture.md` Section 4 capability register, added D-012 in `spec/decisions.md`.
+**Next action:** M0-UI-01 — Minimal chat page (input box, answer display, visible source citation per answer).
+
+---
+
 ## 2026-09-05 — Antigravity / Session 14 — M0-RAG-02 INV-1 ground-check implementation
 
 **Milestone:** M0 — Correctness skeleton.

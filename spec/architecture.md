@@ -47,9 +47,9 @@ Expensive to reverse: the chunking strategy (500 tokens, 50 overlap) and embeddi
 
 | Capability | Status | Needed for |
 |---|---|---|
-| Single-subject grounded Q&A with citations | **planned — M0, not yet built** | the core product |
-| "Not in my material" fallback for low-confidence retrieval | **planned — M0, not yet built** | INV-1 |
-| Heartbeat to prevent Supabase pause | **planned — M0, not yet built** | uptime during quiet stretches |
+| Single-subject grounded Q&A with citations | **built (M0-RAG-03)** | the core product |
+| "Not in my material" fallback for low-confidence retrieval | **built (M0-RAG-02)** | INV-1 |
+| Heartbeat to prevent Supabase pause | **built (M0-SETUP-03)** | uptime during quiet stretches |
 | Query-count-only telemetry | **planned — M2, not yet built** | the success metric |
 | Multiple subjects | **not supported** | would unblock a real M3, only after the M2 pilot passes |
 | User accounts / login | **not supported** | not needed until (if ever) this grows past a shared-link test group |
