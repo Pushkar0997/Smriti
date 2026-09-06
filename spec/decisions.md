@@ -160,3 +160,17 @@ Every non-obvious decision, why, and what was rejected. **This file exists to st
 
 **Revisit if:** Google updates or deprecates `gemini-3.5-flash-lite` or changes free-tier limits.
 
+---
+
+## D-013 — Relative relevance margin (RELEVANCE_MARGIN = 0.06) added to qualifying-chunk filtering
+
+**Status:** decided
+**Decision:** Pinned `RELEVANCE_MARGIN = 0.06` in `CONTRACT.md`'s exact values and `lib/retrieval.ts`. Updated `groundCheck`'s qualifying chunk filter from `c.similarity >= threshold` to `c.similarity >= Math.max(threshold, topScore - RELEVANCE_MARGIN)`, applying consistently to both the context chunks sent to the LLM and the citations returned to the user.
+**Rationale:** Real retrieval data from the ARIES test query demonstrated that while all 5 retrieved chunks cleared the 0.65 absolute similarity floor, only 3 were genuinely part of the ARIES recovery answer (scores: 0.7620 Question 3 ARIES overview, 0.7392 Phase 2 Redo, 0.7148 Checkpointing). The remaining 2 chunks were unrelated DBMS topics that cleared the floor solely due to shared database terminology (0.6914 Write Skew under Snapshot Isolation, 0.6702 Two-Phase Locking). The absolute threshold alone cannot distinguish between content specific to the answer and topically adjacent content in the same domain. Enforcing a relative margin of 0.06 from the top score (`0.7620 - 0.06 = 0.7020`) cleanly keeps the 3 genuine chunks while excluding the 2 off-target chunks.
+**Rejected:**
+- *Raising absolute SIMILARITY_THRESHOLD above 0.70* — rejected because D-011 showed valid paraphrased queries score around 0.71–0.73, and a higher absolute threshold causes false negatives when queries don't mirror source wording.
+- *LLM-prompt-only filtering* — rejected because the unneeded chunks still pollute prompt context, consume context tokens, and show up in user-facing citations if citation generation mirrors retrieval.
+- *Different filtering for citations vs LLM context* — rejected because citations must strictly reflect the evidence backing the model's answer.
+
+**Revisit if:** M1 real-content evaluation shows multi-topic answers legitimately spanning chunks with a wider score spread (>0.06).
+

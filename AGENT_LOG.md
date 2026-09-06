@@ -6,6 +6,26 @@ Every session writes an entry, including failed sessions. "Noticed, did not fix"
 
 ---
 
+## 2026-09-07 — Antigravity / Session 16 — RELEVANCE_MARGIN (0.06) & D-013 context/citation filtering
+
+**Milestone:** M0 — Correctness skeleton.
+**Tasks attempted:** RELEVANCE_MARGIN calibration and D-013 implementation.
+**Landed:**
+- Pinned `RELEVANCE_MARGIN = 0.06` in `CONTRACT.md` exact values and exported from `lib/retrieval.ts`.
+- Updated `groundCheck` in `lib/retrieval.ts` so qualifying chunks satisfy `c.similarity >= Math.max(threshold, topScore - relevanceMargin)`, ensuring context passed to LLM and citations returned to user match identically.
+- Documented D-013 in `spec/decisions.md` based on empirical ARIES query scores (0.7620, 0.7392, 0.7148 genuine ARIES chunks vs 0.6914 Write Skew and 0.6702 2PL off-target chunks sharing database vocabulary).
+- Added `REL-GAP-T` to `spec/evals.md` and added unit test in `tests/inv-1.test.ts` verifying gap filtering. Updated live integration test in `tests/inv-1.test.ts` to assert that ARIES query citations strictly exclude Write Skew and 2PL.
+- Resolved all previous ESLint warnings/errors in `tests/inv-1.test.ts` (removed unused `retrieveChunks`, replaced `as any` with `as unknown as SupabaseClient`).
+- Verified 11/11 tests pass in `npm test`, clean `npm run lint` (0 errors, 0 warnings), and clean Next.js production build (`npm run build`).
+- Re-ran all three fixture queries against `/api/ask` (ARIES, cellular respiration, and Write Skew) confirming citations for ARIES now strictly cite the 3 genuine ARIES sections.
+**Did not land:** N/A — task is fully complete.
+**Blockers:** None.
+**Noticed, did not fix:** None.
+**Spec changes:** Pinned `RELEVANCE_MARGIN = 0.06` in `CONTRACT.md`, updated `spec/evals.md` with `REL-GAP-T`, added D-013 to `spec/decisions.md`.
+**Next action:** M0-UI-01 — Minimal chat page (input box, answer display, visible source citation per answer).
+
+---
+
 ## 2026-09-07 — Antigravity / Session 15 — M0-RAG-03 /api/ask wiring & live Gemini Flash-Lite generation
 
 **Milestone:** M0 — Correctness skeleton.

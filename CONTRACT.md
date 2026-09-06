@@ -48,7 +48,7 @@ Precedence: this file outranks every other document. If something here conflicts
 | Source citation format | Every grounded answer returns `citations` — always a JSON **array**, even when it holds one element (never a bare object, never named `citation` singular). Each element: `{ "document": string, "section": string }`. `document` is the source filename as stored in `documents.title`. `section` is always a **string**, never an integer — use the nearest markdown/PDF heading text if one exists, otherwise the literal string `"chunk N"` where N is the chunk's index within its document. Example: `[{ "document": "DBMS-2024-endsem.pdf", "section": "chunk 7" }]`. |
 | Chunking | Fixed-size chunks of 500 tokens with 50-token overlap. **Tokenizer: the Gemini API's own `countTokens` endpoint** — not a character/4 heuristic, not a whitespace word count, not cl100k. Using the same tokenizer that bills and embeds is the only way chunk sizes mean what they say. Precedence when rules conflict: the 500-token ceiling is hard and always wins; paragraph-boundary splitting is best-effort within it. A single paragraph exceeding 500 tokens is split mid-paragraph rather than allowed to overflow. The 50-token overlap is preserved across every split, including mid-paragraph ones. |
 | `query_counts` date rollover | Rolls over at **IST (Asia/Kolkata) midnight**, not UTC midnight. The metric measures Indian students' study behaviour during an exam week; a UTC rollover would split a single late-night cramming session across two rows and make the metric misleading. The `date` column stores the IST calendar date as a plain `date` type. This is the one deliberate exception to the UTC-storage rule above, and it is deliberate — do not "fix" it. |
-| Retrieval top-k | `TOP_K = 5`. Retrieve the 5 highest-scoring chunks; the INV-1 ground-check applies to the **top-scoring** chunk only (if the best match is below threshold, the fallback fires regardless of what the other four scored). All chunks above threshold are passed to the LLM as context and cited. |
+| Retrieval top-k | `TOP_K = 5`. Retrieve the 5 highest-scoring chunks; the INV-1 ground-check applies to the **top-scoring** chunk only (if the best match is below threshold, the fallback fires regardless of what the other four scored). Qualifying chunks meeting `similarity >= max(threshold, topScore - RELEVANCE_MARGIN)` are passed to the LLM as context and cited. |
 | Error shape | `{ code: SCREAMING_SNAKE, message: string }` — e.g. `{ code: "NO_MATCH", message: "not in my material" }`. |
 | Naming | camelCase in TypeScript, snake_case in Postgres/Supabase. |
 | Similarity threshold | Cosine similarity ≥ 0.65 counts as a match for INV-1. Below this, INV-1's fallback fires. (Calibrated from 0.75 to 0.65 via D-011; revisit after M1 content lands.) |
@@ -61,6 +61,7 @@ Precedence: this file outranks every other document. If something here conflicts
 
 ```
 SIMILARITY_THRESHOLD = 0.65        # calibrated from 0.75 per D-011 — revisit after M1 content lands
+RELEVANCE_MARGIN     = 0.06        # relative cutoff from top score per D-013 — excludes off-target chunks sharing vocabulary
 TOP_K                = 5
 CHUNK_SIZE_TOKENS    = 500
 CHUNK_OVERLAP_TOKENS = 50

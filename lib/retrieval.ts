@@ -7,6 +7,7 @@ import { embedQuery } from "./gemini";
  */
 export const TOP_K = 5;
 export const SIMILARITY_THRESHOLD = 0.65;
+export const RELEVANCE_MARGIN = 0.06;
 
 export interface RetrievedChunk {
   id: string;
@@ -154,7 +155,8 @@ export function formatCitations(chunks: RetrievedChunk[]): Citation[] {
  */
 export function groundCheck(
   chunks: RetrievedChunk[],
-  threshold: number = SIMILARITY_THRESHOLD
+  threshold: number = SIMILARITY_THRESHOLD,
+  relevanceMargin: number = RELEVANCE_MARGIN
 ): GroundCheckResult {
   if (!chunks || chunks.length === 0) {
     return {
@@ -175,8 +177,9 @@ export function groundCheck(
     };
   }
 
-  // All chunks meeting or exceeding threshold are passed as context and cited
-  const qualifyingChunks = chunks.filter((c) => c.similarity >= threshold);
+  // Qualifying chunks must clear absolute threshold AND stay within RELEVANCE_MARGIN of top score
+  const minRequiredScore = Math.max(threshold, topScore - relevanceMargin);
+  const qualifyingChunks = chunks.filter((c) => c.similarity >= minRequiredScore);
 
   return {
     passed: true,

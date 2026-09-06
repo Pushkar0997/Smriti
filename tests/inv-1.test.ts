@@ -1,13 +1,14 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
+import { SupabaseClient } from "@supabase/supabase-js";
 import {
   SIMILARITY_THRESHOLD,
+  RELEVANCE_MARGIN,
   NO_MATCH_RESPONSE,
   RetrievedChunk,
   groundCheck,
   formatCitations,
   executeGroundedQuery,
-  retrieveChunks,
   LLMGenerateFn,
 } from "../lib/retrieval";
 
@@ -153,6 +154,78 @@ describe("INV-1: Grounded answers only", () => {
         { document: "doc.md", section: "Heading B" },
       ]);
     });
+
+    it("filters qualifying chunks using RELEVANCE_MARGIN relative to top score", () => {
+      // Simulates real scores observed from ARIES fixture query:
+      // top score = 0.7620; cutoff = 0.7620 - 0.06 = 0.7020
+      const fixtureChunks: RetrievedChunk[] = [
+        {
+          id: "1",
+          documentId: "doc-1",
+          content: "ARIES recovery question 3",
+          sectionLabel: "Question 3: Comprehensive Analysis of ARIES Crash Recovery Protocol",
+          documentTitle: "DBMS-Test-Fixture.md",
+          similarity: 0.762,
+        },
+        {
+          id: "2",
+          documentId: "doc-1",
+          content: "Phase 2 Redo phase",
+          sectionLabel: "4. Phase 2: The Redo Phase",
+          documentTitle: "DBMS-Test-Fixture.md",
+          similarity: 0.7392,
+        },
+        {
+          id: "3",
+          documentId: "doc-1",
+          content: "Checkpointing mechanics",
+          sectionLabel: "2. Checkpointing Mechanics",
+          documentTitle: "DBMS-Test-Fixture.md",
+          similarity: 0.7148,
+        },
+        {
+          id: "4",
+          documentId: "doc-1",
+          content: "Write Skew anomaly under Snapshot Isolation",
+          sectionLabel: "Question 2: Write Skew Anomaly under Snapshot Isolation",
+          documentTitle: "DBMS-Test-Fixture.md",
+          similarity: 0.6914, // Clears absolute threshold 0.65, but fails topScore - 0.06 (0.7020)
+        },
+        {
+          id: "5",
+          documentId: "doc-1",
+          content: "Two Phase Locking",
+          sectionLabel: "Question 4: Two-Phase Locking (2PL) Variants and Concurrency Guarantees",
+          documentTitle: "DBMS-Test-Fixture.md",
+          similarity: 0.6702, // Clears absolute threshold 0.65, but fails topScore - 0.06 (0.7020)
+        },
+      ];
+
+      const result = groundCheck(fixtureChunks, SIMILARITY_THRESHOLD, RELEVANCE_MARGIN);
+      assert.strictEqual(result.passed, true);
+      assert.strictEqual(result.topScore, 0.762);
+
+      // Only the 3 genuine ARIES chunks qualify (>= 0.7020)
+      assert.strictEqual(result.chunks.length, 3);
+      assert.deepStrictEqual(
+        result.chunks.map((c) => c.id),
+        ["1", "2", "3"]
+      );
+      assert.deepStrictEqual(result.citations, [
+        {
+          document: "DBMS-Test-Fixture.md",
+          section: "Question 3: Comprehensive Analysis of ARIES Crash Recovery Protocol",
+        },
+        {
+          document: "DBMS-Test-Fixture.md",
+          section: "4. Phase 2: The Redo Phase",
+        },
+        {
+          document: "DBMS-Test-Fixture.md",
+          section: "2. Checkpointing Mechanics",
+        },
+      ]);
+    });
   });
 
   describe("Unit: executeGroundedQuery() No-Third-Path enforcement", () => {
@@ -186,7 +259,7 @@ describe("INV-1: Grounded answers only", () => {
       const result = await executeGroundedQuery(
         "Off topic query",
         mockLLM,
-        { supabaseClient: mockSupabase as any, matchThreshold: 0.0 }
+        { supabaseClient: mockSupabase as unknown as SupabaseClient, matchThreshold: 0.0 }
       );
 
       // Assert NO_MATCH response
@@ -220,7 +293,7 @@ describe("INV-1: Grounded answers only", () => {
           await executeGroundedQuery(
             "Any query",
             mockLLM,
-            { supabaseClient: mockSupabaseFailing as any }
+            { supabaseClient: mockSupabaseFailing as unknown as SupabaseClient }
           );
         },
         /Supabase match_chunks RPC failed: Simulated network failure/
@@ -260,7 +333,7 @@ describe("INV-1: Grounded answers only", () => {
       const result = await executeGroundedQuery(
         "Explain ARIES phases",
         mockLLM,
-        { supabaseClient: mockSupabaseSuccess as any }
+        { supabaseClient: mockSupabaseSuccess as unknown as SupabaseClient }
       );
 
       assert.strictEqual(llmCallCount, 1);
@@ -292,19 +365,24 @@ describe("INV-1: Grounded answers only", () => {
       const query = "Explain the ARIES recovery protocol and its three distinct phases";
       const result = await executeGroundedQuery(query, mockLLM);
 
-      // Verify LLM was invoked with qualifying chunks
+      // Verify LLM was invoked with qualifying chunks filtered by RELEVANCE_MARGIN
       assert.strictEqual(llmCallCount, 1, "LLM should have been called for matching query");
-      assert.ok(receivedChunks.length > 0, "Expected at least 1 chunk to pass threshold");
+      assert.strictEqual(receivedChunks.length, 3, "Expected exactly 3 chunks within RELEVANCE_MARGIN of top score");
       assert.ok(
         receivedChunks[0].similarity >= SIMILARITY_THRESHOLD,
         `Top chunk similarity ${receivedChunks[0].similarity} should be >= ${SIMILARITY_THRESHOLD}`
       );
 
-      // Verify response structure
+      // Verify response structure and citations (must exclude Write Skew and 2PL)
       if ("answer" in result) {
         assert.strictEqual(result.answer, "Mocked grounded answer.");
-        assert.ok(result.citations.length > 0);
-        assert.strictEqual(result.citations[0].document, "DBMS-Test-Fixture.md");
+        assert.strictEqual(result.citations.length, 3);
+        const sectionLabels = result.citations.map((c) => c.section);
+        assert.ok(sectionLabels.includes("Question 3: Comprehensive Analysis of ARIES Crash Recovery Protocol"));
+        assert.ok(sectionLabels.includes("4. Phase 2: The Redo Phase"));
+        assert.ok(sectionLabels.includes("2. Checkpointing Mechanics"));
+        assert.strictEqual(sectionLabels.includes("Question 2: Write Skew Anomaly under Snapshot Isolation"), false);
+        assert.strictEqual(sectionLabels.includes("Question 4: Two-Phase Locking (2PL) Variants and Concurrency Guarantees"), false);
       } else {
         assert.fail("Expected grounded answer result, got NO_MATCH fallback");
       }

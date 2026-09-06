@@ -25,6 +25,7 @@ One per invariant in `CONTRACT.md`.
 | ID | Invariant | Assertion |
 |---|---|---|
 | INV-1-T | Grounded answers only | A query with no matching chunk above threshold returns `{ code: "NO_MATCH", message: "not in my material" }`, and the LLM is never called for that request (assert via mock — the LLM function must not be invoked). **Implemented in `tests/inv-1.test.ts` (passing).** |
+| REL-GAP-T | Relevance gap filtering | Given a top-scoring chunk and a set of candidate chunks clearing the absolute threshold, only chunks within `RELEVANCE_MARGIN` (0.06) of the top score qualify for LLM context and user citations. Off-target chunks separated by a relevance gap are excluded. **Implemented in `tests/inv-1.test.ts` (passing).** |
 | INV-2-T | Attribution accuracy | **Dormant at M0/M1** — no test exists yet because no attributed content exists yet. Must be written and passing before any task ingests other-branch or named-senior content (see D-003). |
 | INV-3-T | No query content logged | Grep the deployed Vercel function logs and the full Supabase schema for any field or log statement capable of holding raw query text. Fails if found. |
 | INV-4-T | Zero recurring cost | **Human check at each milestone close, not automated.** Enumerate every external service the stack calls. Each must be permanently free-tier, not free-trial. Record the list and the verdict in §7 alongside the milestone verdict. Fails if any service is metered, trial-based, or requires a card to keep working. |
