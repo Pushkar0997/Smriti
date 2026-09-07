@@ -7,7 +7,7 @@ Lets an MIT-ADT junior or senior ask what a specific professor/subject actually 
 Every semester, the same PYQs, notes, and placement-interview experiences get re-asked-for and re-typed-from-memory in WhatsApp groups, scattered across screenshots and Drive links, half-lost by the time they reach the next batch of juniors. Generic AI tools (ChatGPT, NotebookLM) can already answer questions *if* someone manually uploads the same material — but nobody has actually aggregated it. The gap isn't the AI capability, it's the curation nobody's done.
 
 ## 3. Target user
-**Primary:** MIT-ADT juniors and seniors preparing for one specific subject's internal exam, starting with a 10–15 person test group.
+**Primary:** MIT-ADT juniors and seniors preparing for the Operating Systems (OS) internal exam (the pilot subject, explicitly decided by Pushkar), starting with a 10–15 person test group.
 **Secondary:** none at M0. Do not build for a second subject or a second college until the pilot passes.
 **Explicitly not the target:** students at other colleges, students wanting whole-syllabus tutoring, anyone expecting a general-purpose study chatbot.
 
@@ -36,5 +36,5 @@ Fewer than 5 of 15 test users send 3+ real queries in week 1 of the pilot. If th
 ## 8. Glossary
 - **PYQ** — Previous Year Question(s).
 - **Grounded answer** — an answer traceable to a real retrieved source chunk, shown to the user alongside it.
-- **Pilot subject** — the single subject M0–M2 are built and tested against.
+- **Pilot subject** — the single subject M0–M2 are built and tested against: Operating Systems (OS), explicitly decided by Pushkar (not DBMS, which was only an inference from the test fixture filename).
 - **Test group** — the initial 10–15 juniors piloting the pilot subject.

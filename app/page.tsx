@@ -191,7 +191,7 @@ export default function Home() {
           <div>
             <h1 className="app-title">Smriti</h1>
             <p className="app-subtitle">
-              Exam preparation assistant for MIT-ADT · Pilot subject: DBMS
+              Exam preparation assistant for MIT-ADT — target subject: OS (test data currently loaded: DBMS sample fixture)
             </p>
           </div>
           {accessCode ? (

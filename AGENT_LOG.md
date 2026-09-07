@@ -6,6 +6,25 @@ Every session writes an entry, including failed sessions. "Noticed, did not fix"
 
 ---
 
+## 2026-09-07 — Antigravity / Session 20 — Spec correction: Pilot subject is OS (Operating Systems)
+
+**Milestone:** M1 — Real content, one subject.
+**Tasks attempted:** Clarify pilot subject as OS and distinguish from loaded DBMS test fixture.
+**Landed:**
+- Updated `spec/product.md` Section 3 ("Target user") and Section 8 ("Glossary") explicitly defining the pilot subject as Operating Systems (OS), decided by Pushkar (correcting the earlier inference from the M0 DBMS test fixture).
+- Updated `app/page.tsx` header subtitle to explicitly separate target pilot subject from currently loaded content: `"Exam preparation assistant for MIT-ADT — target subject: OS (test data currently loaded: DBMS sample fixture)"`.
+- Preserved DBMS sample query buttons in `app/page.tsx` since they accurately test against the currently loaded database content.
+- Updated `BRIEF.md` "Where things stand" noting target pilot subject OS for M1-CONTENT-01 while clarifying current database content remains the DBMS test fixture until M1 content lands.
+- Verified test suite (`npm test`, 11/11 passing) and lint (`npm run lint`, 0 errors, 0 warnings).
+- Did not touch any other files or start M1-CONTENT-01.
+**Did not land:** N/A.
+**Blockers:** None.
+**Noticed, did not fix:** None.
+**Spec changes:** Updated `spec/product.md`, `app/page.tsx`, `BRIEF.md`.
+**Next action:** Pushkar begins M1-CONTENT-01 (pulling PYQs from Drive + PPTs/notes for OS).
+
+---
+
 ## 2026-09-07 — Antigravity / Session 19 — M0-DEPLOY-01 live verification & M0 milestone closure
 
 **Milestone:** M0 — Correctness skeleton (closed) → M1 — Real content, one subject (active next).

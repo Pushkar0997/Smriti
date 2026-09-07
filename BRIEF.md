@@ -15,7 +15,7 @@
 **Progress:** 8 of 8 M0 tasks complete. M0 is fully closed out.
 
 **Last done:** Live production deployment at https://smriti-indol.vercel.app manually verified by Pushkar in a private browser (access gate, grounded answers, visible citations, INV-1 fallback, and 401 error state all confirmed live). M0-DEPLOY-01 closed.
-**Next:** M1-CONTENT-01 — pull PYQs from Drive link and Pushkar's PPTs/notes for the pilot subject (DBMS). Content curation and cleaning, not coding.
+**Next:** M1-CONTENT-01 — pull PYQs from Drive link and Pushkar's PPTs/notes for the pilot subject (OS — Operating Systems, explicitly decided by Pushkar). Currently loaded database content remains the DBMS test fixture until M1 content is curated and ingested.
 
 ---
 
