@@ -69,6 +69,8 @@ Do not add a dependency without checking: is it needed, is it maintained, does i
 
 **Never write a real secret into a tracked file.** Not in a test fixture, not in a README example, not commented out, not "temporarily". Secrets live in Vercel's environment variables (and `.env.local`, gitignored, for local dev) and reach the app via `process.env`. Current set: `GEMINI_API_KEY`, `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `ACCESS_CODE`. If you need a credential to make something work and cannot find one, stop and ask.
 
+**Never print, log, or grep a real secret's literal value** — not for verification, not in a scratch script, not in a terminal command, not in model output. Confirm server-only env vars structurally (they're only referenced in server-side files like API routes or backend lib modules, never in client components, never prefixed with `NEXT_PUBLIC_`) rather than by typing the actual value out anywhere.
+
 **Content is not a coding task.** Aggregating, cleaning, and formatting the PYQs/notes for the pilot subject (M1) has its own acceptance criteria in `spec/tasks.md` — do not treat it as a side effect of building the ingestion script.
 
 ---

@@ -6,6 +6,22 @@ Every session writes an entry, including failed sessions. "Noticed, did not fix"
 
 ---
 
+## 2026-09-07 — Antigravity / Session 18 — Structural secret verification policy & AGENTS.md update
+
+**Milestone:** M0 — Correctness skeleton.
+**Tasks attempted:** Incorporate strict rule against printing, logging, or grepping literal secrets.
+**Landed:**
+- Codified strict working rule in `AGENTS.md` and updated `spec/tasks.md` `M0-DEPLOY-01`: **Never print, log, or grep a real secret's literal value** — not for verification, not in a scratch script, not in a terminal command, not in model output.
+- Server-only environment variables (`GEMINI_API_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `ACCESS_CODE`, `CRON_SECRET`) are confirmed structurally: ensuring they are referenced exclusively in server-side files (e.g. `app/api/**` route handlers, server-only backend modules in `lib/`), never imported into client components, never prefixed with `NEXT_PUBLIC_`, and never emitted into static bundles.
+- Acknowledged Pushkar's rotation of `ACCESS_CODE` and production deployment to `https://smriti-indol.vercel.app` (`https://smriti-hpwmkyuv9-pushkarkumar0997-2646s-projects.vercel.app`).
+**Did not land:** N/A.
+**Blockers:** None.
+**Noticed, did not fix:** None.
+**Spec changes:** Updated `AGENTS.md` working rules and `spec/tasks.md` `M0-DEPLOY-01`.
+**Next action:** Awaiting Pushkar's live browser verification of `https://smriti-indol.vercel.app` to close `M0-DEPLOY-01` and `M0`.
+
+---
+
 ## 2026-09-07 — Antigravity / Session 17 — M0-UI-01 Chat page & M0-DEPLOY-01 build & secret audit
 
 **Milestone:** M0 — Correctness skeleton.
