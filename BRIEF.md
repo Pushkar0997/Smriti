@@ -4,7 +4,7 @@
 
 **What this is:** Lets MIT-ADT juniors/seniors ask what a specific professor/subject actually tests — grounded in the batch's own PYQs, notes, and senior interview experiences, not generic textbook content.
 
-**Live at:** not yet deployed · **Repo:** not yet created
+**Live at:** https://smriti-indol.vercel.app · **Repo:** https://github.com/Pushkar0997/Smriti
 
 ---
 
@@ -12,10 +12,10 @@
 
 **Milestone:** M0 — Correctness skeleton
 **Exit criteria:** a real question about the pilot subject returns a grounded answer with a visible source citation; a question the material doesn't cover returns "not in my material" instead of a guess; it's live at a reachable URL.
-**Progress:** 0 of 8 tasks — spec just written, nothing built yet.
+**Progress:** 7 of 8 tasks complete (M0-SETUP-01 through 03, M0-ING-01 through 02, M0-RAG-01 through 03, and M0-UI-01 done; M0-DEPLOY-01 built and deployed, pending Pushkar's live verification).
 
-**Last done:** Session 1 (intake) and Session 2 (this spec) complete.
-**Next:** M0-SETUP-01 — init the repo and Vercel/Supabase projects.
+**Last done:** M0-UI-01 built (accessible chat page with in-memory ACCESS_CODE gate, visible citations alongside grounded answers, distinct amber NO_MATCH state, and distinct red error state); M0-DEPLOY-01 built and deployed with 0 secret leaks in build output.
+**Next:** Pushkar performs live verification in a private browser window to close M0-DEPLOY-01, completing M0. M1 begins next.
 
 ---
 

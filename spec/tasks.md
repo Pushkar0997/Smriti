@@ -23,8 +23,8 @@ Task ID format: `M<milestone>-<area>-<number>`
 - [x] **M0-RAG-03** Wire `/api/ask`: retrieval → ground-check → LLM call with retrieved context (model per D-007 — verify the lightest free-tier model live against AI Studio, do not assume a name) → return `{ answer, citations }` (Verified gemini-3.5-flash-lite live after 2.5-flash-lite 404 deprecation notice; added generateGroundedAnswer to lib/gemini.ts with strict prompt-level grounding; wired app/api/ask/route.ts checking ACCESS_CODE; verified live against DBMS fixture with 200 grounded answer + citations and NO_MATCH for cellular respiration query)
 
 ### UI and deploy
-- [ ] **M0-UI-01** Minimal chat page — input box, answer display, visible source citation per answer
-- [ ] **M0-DEPLOY-01** First deploy to Vercel; confirm live URL works in a private window; confirm no secret in the built output by grepping `.next/` for the literal values of `GEMINI_API_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, and `ACCESS_CODE` — zero matches required.
+- [x] **M0-UI-01** Minimal chat page — input box, answer display, visible source citation per answer (Built app/page.tsx with in-memory access code gate, question input box, active loading indicator, grounded answers with visible document/section citations, distinct amber NO_MATCH state for INV-1 fallback, and distinct red error state with 401 recovery; zero browser storage used per INV-3)
+- [ ] **M0-DEPLOY-01** First deploy to Vercel; confirm live URL works in a private window; confirm no secret in the built output by grepping `.next/` for the literal values of `GEMINI_API_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, and `ACCESS_CODE` — zero matches required. (built and deployed, pending live verification by Pushkar in a real browser)
 
 ---
 

@@ -6,6 +6,30 @@ Every session writes an entry, including failed sessions. "Noticed, did not fix"
 
 ---
 
+## 2026-09-07 — Antigravity / Session 17 — M0-UI-01 Chat page & M0-DEPLOY-01 build & secret audit
+
+**Milestone:** M0 — Correctness skeleton.
+**Tasks attempted:** M0-UI-01 and M0-DEPLOY-01.
+**Landed:**
+- Built `app/page.tsx` client chat interface implementing the in-memory ACCESS_CODE gate (held in React state only per INV-3, never touching localStorage or sessionStorage), query submission form, active loading indicator, sample query quick-triggers, and session history feed.
+- Implemented three visually distinct outcome states per spec:
+  1. Grounded Answer: Answer text alongside visibly displayed source citations box listing document title and section label (never hidden or in tooltips).
+  2. NO_MATCH: Distinct amber/neutral container rendering fixed "not in my material" message and INV-1 fallback explanation without error styling.
+  3. Real Error: Distinct red/rose alert container displaying HTTP / server error codes (e.g. 401 UNAUTHORIZED, 500 INTERNAL_ERROR, network failure) with recovery button to re-enter access code.
+- Added comprehensive CSS design tokens and component styling in `app/globals.css` with support for light/dark themes, high-contrast borders, visible focus rings, full keyboard traversal, and responsive mobile layout.
+- Verified test suite (`npm test`, 11/11 passing) and lint (`npm run lint`, 0 errors, 0 warnings).
+- Executed Next.js production build (`npm run build`), generating static pages and dynamic API routes clean.
+- Performed secret audit across `.next/` build output for literal values of `ACCESS_CODE`, `GEMINI_API_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` (and `CRON_SECRET` variable check), confirming zero matches.
+- Self-certified and ticked `M0-UI-01` in `spec/tasks.md`. Left `M0-DEPLOY-01` unticked with note pending Pushkar's live browser verification.
+- Updated `BRIEF.md` "Where things stand" section to reflect 7/8 tasks completed and current deployment state.
+**Did not land:** N/A.
+**Blockers:** None.
+**Noticed, did not fix:** `CRON_SECRET` is defined exclusively in Vercel Production/Preview environment settings and not in local `.env.local`, so its literal string was audited via absence from codebase/bundle and runtime lookup in `/api/heartbeat`.
+**Spec changes:** Ticked `M0-UI-01` in `spec/tasks.md`, updated `spec/tasks.md` for `M0-DEPLOY-01`, updated `BRIEF.md`.
+**Next action:** Pushkar verifies live site at https://smriti-indol.vercel.app in a private browser window to close M0-DEPLOY-01 and M0 milestone.
+
+---
+
 ## 2026-09-07 — Antigravity / Session 16 — RELEVANCE_MARGIN (0.06) & D-013 context/citation filtering
 
 **Milestone:** M0 — Correctness skeleton.
