@@ -6,6 +6,29 @@ Every session writes an entry, including failed sessions. "Noticed, did not fix"
 
 ---
 
+## 2026-09-07 — Antigravity / Session 19 — M0-DEPLOY-01 live verification & M0 milestone closure
+
+**Milestone:** M0 — Correctness skeleton (closed) → M1 — Real content, one subject (active next).
+**Tasks attempted:** M0-DEPLOY-01 formal closure and M0 milestone wrap-up.
+**Landed:**
+- Received Pushkar's live confirmation of production deployment at `https://smriti-indol.vercel.app` verified in a private browser:
+  1. Access code gate: Functions correctly, held in-memory in React state only (never touching browser storage).
+  2. Grounded Q&A: In-domain DBMS questions return properly grounded answers alongside visible, inline source citations.
+  3. INV-1 Ground-check fallback: Off-topic questions return the distinct neutral "not in my material" response with 0 hallucinated guesses.
+  4. Access control: Wrong access code returns the distinct error response with re-entry trigger.
+- Re-ticked `M0-DEPLOY-01` in `spec/tasks.md` as fully complete, bringing M0 to 8 of 8 tasks completed.
+- Ticked all M0 exit criteria in `spec/plan.md` and activated M1 milestone.
+- Recorded PASS verdict for Milestone M0 in `spec/evals.md` Section 7.
+- Updated `BRIEF.md` "Where things stand" noting M0 is complete and M1 (real content) is next.
+- No M1 tasks started, per strict sequencing directive.
+**Did not land:** N/A.
+**Blockers:** None.
+**Noticed, did not fix:** None.
+**Spec changes:** Ticked `M0-DEPLOY-01` in `spec/tasks.md`, ticked exit criteria in `spec/plan.md`, recorded PASS in `spec/evals.md`, updated `BRIEF.md`.
+**Next action:** Pushkar begins M1-CONTENT-01 (pulling PYQs from Drive link + PPTs/notes for the pilot subject DBMS; content curation/cleaning, not code).
+
+---
+
 ## 2026-09-07 — Antigravity / Session 18 — Structural secret verification policy & AGENTS.md update
 
 **Milestone:** M0 — Correctness skeleton.

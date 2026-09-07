@@ -2,7 +2,7 @@
 
 Sequential. Do not start M(n+1) before M(n)'s exit criteria are met.
 
-**Currently active: M0.**
+**Currently active: M1 (M0 complete).**
 
 ---
 
@@ -20,10 +20,10 @@ Prove the grounded-Q&A path works end to end, deployed and reachable, before spe
 - First live deploy
 
 **Exit criteria**
-- [ ] A question matching test-fixture content returns a grounded answer with a real citation
-- [ ] A question not covered by the fixture returns the fixed "not in my material" response, not a generated guess
-- [ ] Heartbeat cron has actually fired at least once, confirmed in Supabase logs
-- [ ] Live at a Vercel URL, reachable in a private browser window
+- [x] A question matching test-fixture content returns a grounded answer with a real citation
+- [x] A question not covered by the fixture returns the fixed "not in my material" response, not a generated guess
+- [x] Heartbeat cron has actually fired at least once, confirmed in Supabase logs
+- [x] Live at a Vercel URL, reachable in a private browser window
 
 **Risk:** building the whole pipeline before checking Gemini/Supabase free-tier signup friction wastes time if either has an unexpected gate (e.g. billing details required even for "free"). Check both can actually be created with no card before M0-SETUP-02.
 

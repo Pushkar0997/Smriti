@@ -56,6 +56,14 @@ Query counts only, per `query_counts` (date, count). No per-query row, no conten
 
 **PASS only where a test or a recorded live result backs it. Never round up a PARTIAL.**
 
-### Not yet run — no milestone closed
+### Milestone M0 — Correctness skeleton (2026-09-07)
 
-No verdicts recorded yet. First entry goes here after M0's exit criteria are checked against a real deploy, not before.
+- **Verdict: PASS**
+- **Test execution:** 11/11 tests passing (`INV-1-T`, `REL-GAP-T`, `N-02`) via `npm test`.
+- **Live manual verification:** Manually verified live by Pushkar in a private browser at `https://smriti-indol.vercel.app`:
+  1. Access code entry functions as intended (stored in React state only).
+  2. Grounded question returns generated answer with visible document/section citations.
+  3. Off-topic question triggers distinct "not in my material" INV-1 state without hallucination.
+  4. Invalid access code returns distinct error state with re-entry trigger.
+- **Heartbeat verification:** `/api/heartbeat` verified writing keepalive entries to `query_counts` on IST rollover.
+- **Dependency & cost review (INV-4-T):** 100% free tier (Vercel Hobby, Supabase Free, Google AI Studio free tier). ₹0 recurring cost confirmed.

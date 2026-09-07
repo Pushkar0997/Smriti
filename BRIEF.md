@@ -10,12 +10,12 @@
 
 ## Where things stand
 
-**Milestone:** M0 — Correctness skeleton
-**Exit criteria:** a real question about the pilot subject returns a grounded answer with a visible source citation; a question the material doesn't cover returns "not in my material" instead of a guess; it's live at a reachable URL.
-**Progress:** 7 of 8 tasks complete (M0-SETUP-01 through 03, M0-ING-01 through 02, M0-RAG-01 through 03, and M0-UI-01 done; M0-DEPLOY-01 built and deployed, pending Pushkar's live verification).
+**Milestone:** M0 complete · M1 — Real content, one subject (active next)
+**Exit criteria for M0:** Met and verified live (grounded answers, visible citations, "not in my material" INV-1 fallback, in-memory access code gate, reachable production URL).
+**Progress:** 8 of 8 M0 tasks complete. M0 is fully closed out.
 
-**Last done:** M0-UI-01 built (accessible chat page with in-memory ACCESS_CODE gate, visible citations alongside grounded answers, distinct amber NO_MATCH state, and distinct red error state); M0-DEPLOY-01 built and deployed with 0 secret leaks in build output.
-**Next:** Pushkar performs live verification in a private browser window to close M0-DEPLOY-01, completing M0. M1 begins next.
+**Last done:** Live production deployment at https://smriti-indol.vercel.app manually verified by Pushkar in a private browser (access gate, grounded answers, visible citations, INV-1 fallback, and 401 error state all confirmed live). M0-DEPLOY-01 closed.
+**Next:** M1-CONTENT-01 — pull PYQs from Drive link and Pushkar's PPTs/notes for the pilot subject (DBMS). Content curation and cleaning, not coding.
 
 ---
 

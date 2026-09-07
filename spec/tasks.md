@@ -24,7 +24,7 @@ Task ID format: `M<milestone>-<area>-<number>`
 
 ### UI and deploy
 - [x] **M0-UI-01** Minimal chat page — input box, answer display, visible source citation per answer (Built app/page.tsx with in-memory access code gate, question input box, active loading indicator, grounded answers with visible document/section citations, distinct amber NO_MATCH state for INV-1 fallback, and distinct red error state with 401 recovery; zero browser storage used per INV-3)
-- [ ] **M0-DEPLOY-01** First deploy to Vercel; confirm live URL works in a private window; confirm zero secret leakage by structurally verifying server-only env vars (`GEMINI_API_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `ACCESS_CODE`, `CRON_SECRET`) are never referenced in client code or static bundles (built and deployed, pending live verification by Pushkar in a real browser)
+- [x] **M0-DEPLOY-01** First deploy to Vercel; confirm live URL works in a private window; confirm zero secret leakage by structurally verifying server-only env vars (`GEMINI_API_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `ACCESS_CODE`, `CRON_SECRET`) are never referenced in client code or static bundles (Manually verified live at https://smriti-indol.vercel.app by Pushkar in a private browser: access code entry works, in-domain query returns grounded answer with visible citations, off-topic query returns distinct "not in my material" state, and wrong access code returns distinct error state; all 4 confirmed live)
 
 ---
 
