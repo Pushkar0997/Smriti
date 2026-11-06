@@ -35,7 +35,7 @@ Two API routes, not one: `/api/ask` is the product, `/api/heartbeat` is infrastr
 
 ## 3. Data model
 
-**documents** — one row per source file (a PYQ set, a notes PDF). `id`, `title`, `subject`, `uploaded_at`.
+**documents** — one row per source file (a PYQ set, a notes PDF). `id`, `title`, `subject`, `doc_type` (nullable, planned at M1-CONTENT-01b), `uploaded_at`.
 **chunks** — one row per ~500-token chunk. `id`, `document_id` (FK), `content` (text), `embedding` (vector(768)), `section_label` (for citation display).
 **query_counts** — one row per day. `date`, `count`. **Never** a row per query with content — that's INV-3.
 

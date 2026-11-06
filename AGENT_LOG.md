@@ -6,6 +6,25 @@ Every session writes an entry, including failed sessions. "Noticed, did not fix"
 
 ---
 
+## 2026-11-06 — Antigravity / Session 23 — Spec & plan updates (M1-CONTENT-01b, 03a, 03)
+
+**Milestone:** M1 — Real content, one subject.
+**Tasks attempted:** Update `local/plan.json` guest lecture exclusions and refine M1 task specifications in `spec/tasks.md` and `spec/architecture.md`.
+**Landed:**
+- Updated `local/plan.json`: set `include: false` and `reason: "exam relevance unconfirmed"` on `os guest lecture.png` and `os guest lecture 2.png` (total planned: 36 files; 25 included, 11 excluded).
+- Updated `spec/tasks.md`:
+  - `M1-CONTENT-01b`: added nullable `documents.doc_type text` column (`QB` | `Slides` | `Notes` | `Assignment` | `Worked`) to the planned SQL migration.
+  - Added `M1-CONTENT-03a`: ingestion scale test on single largest extracted file with token counting, embedding calls, wall time, 429 tracking, projection across full plan, and cleanup of throwaway document.
+  - Updated `M1-CONTENT-03`: clarified idempotency per document title, resumability, 429 backoff, and reading titles and `docType` from `local/plan.json`.
+- Updated `spec/architecture.md` Section 3 Data Model: documented nullable `doc_type` column on `documents` table planned at M1-CONTENT-01b.
+**Did not land:** Extraction and ingestion (deliberately avoided per prompt instructions).
+**Blockers:** None.
+**Noticed, did not fix:** None.
+**Spec changes:** Updated `spec/tasks.md` and `spec/architecture.md`.
+**Next action:** Run extraction pipeline (`npm run extract`) or proceed to M1-CONTENT-01b SQL migration.
+
+---
+
 ## 2026-11-06 — Antigravity / Session 22 — M1-CONTENT-02a Extraction pipeline from triage plan to verbatim markdown
 
 **Milestone:** M1 — Real content, one subject.
