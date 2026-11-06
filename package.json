@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "test": "tsx --test tests/**/*.test.ts",
-    "ingest:fixture": "tsx scripts/ingest_fixture.ts"
+    "ingest:fixture": "tsx scripts/ingest_fixture.ts",
+    "inventory": "tsx scripts/inventory.ts"
   },
   "dependencies": {
     "@google/genai": "^2.21.0",
@@ -19,11 +20,14 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
+    "@types/jszip": "^3.4.0",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "15.5.25",
+    "jszip": "^3.10.2",
+    "pdf-lib": "^1.17.1",
     "tsx": "^4.23.13",
     "typescript": "^5"
   }

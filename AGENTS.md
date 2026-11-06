@@ -73,6 +73,8 @@ Do not add a dependency without checking: is it needed, is it maintained, does i
 
 **Content is not a coding task.** Aggregating, cleaning, and formatting the PYQs/notes for the pilot subject (M1) has its own acceptance criteria in `spec/tasks.md` — do not treat it as a side effect of building the ingestion script.
 
+**Never commit course material, extracted text, or manifests.** Source course material, extracted text, and the manifest are never committed (the repo is public). All raw course documents, intermediate markdown extractions, and inventory manifests live strictly under gitignored directories (e.g. `local/`).
+
 ---
 
 ## 5. Definition of done

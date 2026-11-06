@@ -30,9 +30,12 @@ Task ID format: `M<milestone>-<area>-<number>`
 
 ## M1 — Real content, one subject
 
-### Content
-- [ ] **M1-CONTENT-01** Pull PYQs from the existing Drive link + Pushkar's own PPTs/notes for the pilot subject
+### Content & Triage
+- [ ] **M1-CONTENT-01** Pilot subject source material for Operating Systems (OS) gathered locally. Collection complete; remaining work is inventory, triage, and extraction.
+- [x] **M1-CONTENT-01a** Read-only inventory script and manifest generator (`scripts/inventory.ts` + `npm run inventory`). Acceptance: Recursively walks a folder path without modifying or moving source files; writes `local/manifest.json` and prints a formatted summary table; records relative path, type, size, slide/page count, SHA-256, duplicate group id, and text layer detection for PDFs; includes blank `"tier"` and `"include"` fields for human curation; `local/` gitignored per AGENTS.md. (Implemented in scripts/inventory.ts and verified against local throwaway test corpus covering text PDFs, scanned image PDFs, exact duplicates, PPTX, DOCX, and images; writes local/manifest.json and readable table)
+- [ ] **M1-CONTENT-01b** Subject filter on retrieval (scheduled right before OS ingestion). Acceptance: `match_chunks` RPC gains an optional `target_subject text default null` parameter (drop old function signature first in Supabase migration to avoid PostgREST overload ambiguity); `retrieveChunks` in `lib/retrieval.ts` and `/api/ask` pass the active subject (`'OS'`); DBMS fixture stays retrievable by tests but not from live `/api/ask`; UI sample buttons and header subtitle in `app/page.tsx` updated to stay honest.
 - [ ] **M1-CONTENT-02** Clean and format into ingestable text; OCR any scanned PYQs
+- [ ] **M1-CONTENT-02a** Extraction pipeline from manifest to markdown (scope in detail after manifest exists). Acceptance: Maps PPTX slide titles and DOCX heading styles to markdown `#` headings; directly extracts text from text-layer PDFs; runs scanned PDFs and images through Gemini vision OCR; produces verbatim output without summarization or hallucinated cleanup.
 - [ ] **M1-CONTENT-03** Run through `lib/ingest.ts`. Acceptance: `chunks` row count equals embedding count exactly (no partial failures); zero chunks with empty/null `content`; zero chunks exceeding `CHUNK_SIZE_TOKENS`; total chunk count is within 2x of `(total source tokens / 450)` — a wild deviation means chunking silently misbehaved.
 
 ### Verification

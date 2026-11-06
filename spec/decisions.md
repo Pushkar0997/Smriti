@@ -174,3 +174,21 @@ Every non-obvious decision, why, and what was rejected. **This file exists to st
 
 **Revisit if:** M1 real-content evaluation shows multi-topic answers legitimately spanning chunks with a wider score spread (>0.06).
 
+---
+
+## D-014 — pdf-lib and JSZip selected for offline material inventory (M1-CONTENT-01a)
+
+**Status:** decided
+**Decision:** Installed `pdf-lib` and `jszip` (with `@types/jszip`) as devDependencies for the offline course material inventory script (`scripts/inventory.ts`).
+**Rationale:** For M1-CONTENT-01a, the tool must recursively walk a source folder and extract metadata: page count and text-layer presence for PDFs; slide counts for PPTX; page/property counts for DOCX; and SHA-256 duplicate detection.
+- `pdf-lib`: Pure TypeScript/JavaScript with zero native compilation requirements, runs reliably across Windows/Linux/macOS on Node 22. Accurately reports PDF page counts. Content streams are decompressed via Node's native `zlib.inflateSync` to inspect for text display operators (`BT...ET` containing `Tj`/`TJ`/'/"), providing an unambiguous `hasTextLayer` boolean without worker thread overhead or canvas dependencies.
+- `jszip`: Pure JavaScript zip archive parser. PPTX and DOCX files are standard OpenXML ZIP packages. PPTX slide counts are accurately determined by enumerating `ppt/slides/slide*.xml` and checking `docProps/app.xml`; DOCX page/word counts are inspected from `docProps/app.xml`.
+- Both packages are strictly local/offline tools installed in `devDependencies`, with zero impact on production runtime size or deployment.
+**Rejected:**
+- *pdf-parse v2+ / @napi-rs/canvas*: Rejected due to 21+ MB package footprint and native binary compilation dependencies.
+- *pdf-parse v1 (legacy)*: Rejected due to incompatible 2018 pdf.js dependency failing on modern xref tables in Node 22.
+- *unpdf*: Rejected due to DOMException DataCloneError when communicating with worker threads on Node 22 loopback ports.
+- *Heavy office converters (LibreOffice / Pandoc / Python bindings)*: Rejected as heavy external system dependencies violating the lightweight, self-contained TypeScript repo model.
+
+**Revisit if:** Future extraction tasks (`M1-CONTENT-02a`) require full text extraction or rendering beyond metadata inventory.
+

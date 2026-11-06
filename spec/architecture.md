@@ -8,12 +8,12 @@
 | Framework | Next.js, App Router | 15.x | Single deploy target on Vercel; API routes keep the Gemini key server-side. |
 | Hosting | Vercel | Hobby (free) tier | Zero-cost, git-push deploys, built-in one-click rollback. |
 | Database / vector store | Supabase (Postgres + pgvector) | current stable | Free tier covers this project's scale by a wide margin (500MB vs. one subject's worth of text). |
-| LLM | The lightest/cheapest free-tier Gemini text model — deliberately not Gemini 3.8 Flash | verify current model name live against AI Studio's model list before M0-RAG-03 | Pro models left the free tier in April 2026. Gemini 3.8 Flash (released Sept 2, 2026) is free-tier but tuned for long-horizon agentic reasoning and spends more tokens per request by design — wrong fit for a short grounded lookup where RPM is the binding constraint (see D-006, D-007). |
-| Embeddings | Gemini embedding model, 768-dim (MRL-scaled from 3072 default) | verify current model name live | Smaller dimension trades a little quality for storage/cost headroom, irrelevant at this scale but cheap to pin now. |
+| LLM | gemini-3.5-flash-lite (per D-006, D-007, D-012) | current stable | Lightest free-tier Gemini text model with high RPM ceiling and zero thinking-token overhead by default. Pro models left free tier in April 2026; Gemini 3.8 Flash avoided per D-007. |
+| Embeddings | gemini-embedding-001, 768-dim (MRL-scaled from 3072 default, per D-010) | current stable | Matches the chunking tokenizer (Gemini countTokens) and natively supports 768-dim output and RETRIEVAL_DOCUMENT / RETRIEVAL_QUERY task types. |
 | Auth | None — shared access link/code | — | A real accounts system is out of scope until the pilot proves people want this at all (see `product.md` non-goals). |
-| Scheduling | Vercel Cron (or GitHub Actions if Vercel Cron needs a paid plan — verify at build time) | — | Heartbeat ping every 3 days to dodge Supabase's 7-day inactivity pause. |
+| Scheduling | Vercel Cron | current stable | Daily heartbeat ping (`0 0 * * *`) to dodge Supabase's 7-day inactivity pause, matching CONTRACT.md and vercel.json. |
 
-Versions are approximate on purpose where model names are concerned — Google renames/rotates free-tier model availability faster than this document gets updated. Verify against live AI Studio docs before pinning in code.
+Model names and configurations are pinned in `lib/gemini.ts` and documented in `spec/decisions.md` (D-010 for embeddings, D-012 for generation).
 
 ## 2. Structure
 

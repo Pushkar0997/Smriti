@@ -6,6 +6,36 @@ Every session writes an entry, including failed sessions. "Noticed, did not fix"
 
 ---
 
+## 2026-11-06 — Antigravity / Session 21 — M1-CONTENT-01a Inventory script & Spec update
+
+**Milestone:** M1 — Real content, one subject.
+**Tasks attempted:** Spec cleanup, M1 backlog task definition (M1-CONTENT-01a, M1-CONTENT-01b, M1-CONTENT-02a), and M1-CONTENT-01a read-only inventory script.
+**Landed:**
+- Cleaned up stale spec items:
+  - Updated `spec/architecture.md` Section 1 scheduling row to daily heartbeat (`0 0 * * *`), matching `CONTRACT.md` and `vercel.json`.
+  - Updated `spec/architecture.md` Section 1 LLM and embedding rows to settled models (`gemini-3.5-flash-lite` per D-012, `gemini-embedding-001` per D-010).
+  - Updated `spec/tasks.md` `M1-CONTENT-01` to name OS explicitly and reflect that source files are gathered locally.
+- Added tasks with acceptance criteria to `spec/tasks.md`:
+  - `M1-CONTENT-01a`: Read-only inventory script and manifest generator.
+  - `M1-CONTENT-01b`: Subject filter on retrieval (`match_chunks` RPC optional subject param, scheduled right before OS ingestion).
+  - `M1-CONTENT-02a`: Extraction pipeline from manifest to markdown (PPTX slide titles, DOCX headings, text PDF extraction, Gemini vision OCR for scanned PDFs/images).
+- Implemented `M1-CONTENT-01a`:
+  - Added `local/` to `.gitignore`.
+  - Added public repository safety rule to `AGENTS.md`: source course material, extracted text, and manifests are never committed.
+  - Evaluated PDF/office inspection tools: selected `pdf-lib` (zero native binaries, accurate page counts, zlib content stream decompression for text-operator detection) and `jszip` (pure JS OpenXML archive inspection for slide/page counts) as devDependencies; documented in `spec/decisions.md` (D-014).
+  - Implemented `scripts/inventory.ts` and added `"inventory": "tsx scripts/inventory.ts"` script to `package.json`.
+  - Walks source directories in read-only mode, computes SHA-256 hashes, detects duplicate sets, checks PDF text layers, and outputs `local/manifest.json` with blank `tier` and `include` curation fields alongside a formatted summary table.
+  - Verified on a throwaway test corpus covering text PDFs, image-only PDFs, duplicate text files, PPTX, DOCX, and PNG images.
+  - Cleaned Next.js production build (`npm run build`) and test suite (`npm test`, 11/11 passing).
+  - Ticked `M1-CONTENT-01a` in `spec/tasks.md`.
+**Did not land:** M1-CONTENT-01b and M1-CONTENT-02a (deliberately not started per instructions).
+**Blockers:** None.
+**Noticed, did not fix:** None.
+**Spec changes:** Updated `spec/architecture.md`, `spec/tasks.md`, `spec/decisions.md`, `AGENTS.md`, `.gitignore`, `package.json`.
+**Next action:** Pushkar runs `npm run inventory -- <path>` against the real OS source folder to generate `local/manifest.json` and triages files (`tier`, `include`).
+
+---
+
 ## 2026-09-07 — Antigravity / Session 20 — Spec correction: Pilot subject is OS (Operating Systems)
 
 **Milestone:** M1 — Real content, one subject.
