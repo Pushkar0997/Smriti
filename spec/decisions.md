@@ -192,3 +192,21 @@ Every non-obvious decision, why, and what was rejected. **This file exists to st
 
 **Revisit if:** Future extraction tasks (`M1-CONTENT-02a`) require full text extraction or rendering beyond metadata inventory.
 
+---
+
+## D-015 — Extraction library choices: pdfjs-dist legacy, JSZip, and Gemini 3.5 Flash-Lite Vision OCR (M1-CONTENT-02a)
+
+**Status:** decided
+**Decision:** Selected `pdfjs-dist/legacy/build/pdf.mjs` for deterministic text-layer PDF extraction, `jszip` for PPTX slide titles/content and DOCX headings/paragraphs/tables, and `gemini-3.5-flash-lite` for live vision OCR on image-only PDFs and PNGs.
+**Rationale:**
+- **Text-layer PDFs:** After `unpdf` and legacy `pdf-parse` failed on Node 22 (D-014), evaluated `pdf2json` and modern official `pdfjs-dist`. `pdf2json` threw token length errors on modern object streams. The legacy build of official `pdfjs-dist` (`pdfjs-dist/legacy/build/pdf.mjs`) with `disableFontFace: true` and `useSystemFonts: true` works out-of-the-box in Node 22 without worker threads, extracting clean per-page text content deterministically across both real college PDFs and generated files.
+- **PPTX & DOCX:** `jszip` parses OpenXML archives directly with 0 external dependencies. In PPTX, slides are ordered numerically, slide titles are extracted from title placeholder shapes (`<p:ph type="title|ctrTitle">`), and body text from text runs. In DOCX, paragraph styles (`Heading 1`, `Heading 2`, `Normal`, `Title`) map to Markdown heading levels (`##`, `###`, etc.), and table grids are converted to standard markdown tables.
+- **Image-only PDFs & PNGs:** Verified live against Google AI Studio API: `gemini-3.5-flash-lite` natively accepts both `image/png` (and JPEG) and `application/pdf` in `inlineData`. It executes vision OCR directly without needing native canvas compilation or poppler rasterizers locally. Prompted strictly for verbatim transcription, table formatting, figure tagging (`[diagram: <few words>]`), unreadable text tagging (`[illegible]`), and non-answering/non-summarizing rules.
+- **Resilience:** Implemented exponential backoff for HTTP 429 / RESOURCE_EXHAUSTED errors; extraction is idempotent and resumable per file with `--force` override.
+
+**Rejected:**
+- *External OCR tools (Tesseract / EasyOCR / PyMuPDF in Colab)*: Ruled unnecessary because Gemini's native API multimodal capabilities handle both PDF and PNG vision inputs directly in the Node.js pipeline with high fidelity and zero local binary footprint.
+- *pdf2json*: Rejected due to stream token warnings and excessive whitespace artifact generation.
+
+**Revisit if:** Multimodal PDF token sizes exceed inlineData payload limits (20MB) or rate limits bind heavily during large multi-page scanned batches.
+

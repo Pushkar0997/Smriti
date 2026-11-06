@@ -9,7 +9,8 @@
     "lint": "eslint",
     "test": "tsx --test tests/**/*.test.ts",
     "ingest:fixture": "tsx scripts/ingest_fixture.ts",
-    "inventory": "tsx scripts/inventory.ts"
+    "inventory": "tsx scripts/inventory.ts",
+    "extract": "tsx scripts/extract.ts"
   },
   "dependencies": {
     "@google/genai": "^2.21.0",
@@ -28,6 +29,7 @@
     "eslint-config-next": "15.5.25",
     "jszip": "^3.10.2",
     "pdf-lib": "^1.17.1",
+    "pdfjs-dist": "^6.5.438",
     "tsx": "^4.23.13",
     "typescript": "^5"
   }

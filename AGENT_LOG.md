@@ -6,6 +6,36 @@ Every session writes an entry, including failed sessions. "Noticed, did not fix"
 
 ---
 
+## 2026-11-06 — Antigravity / Session 22 — M1-CONTENT-02a Extraction pipeline from triage plan to verbatim markdown
+
+**Milestone:** M1 — Real content, one subject.
+**Tasks attempted:** Tighten M1-CONTENT-02a acceptance criteria and implement verbatim extraction pipeline from `local/plan.json` to `local/extracted/*.md` and `local/extraction_report.json`.
+**Landed:**
+- Tightened acceptance criteria for `M1-CONTENT-02a` in `spec/tasks.md`.
+- Evaluated extraction libraries live on Node 22:
+  - Text-layer PDFs: verified official `pdfjs-dist/legacy/build/pdf.mjs` with `disableFontFace: true` and `useSystemFonts: true`. Extracts clean, deterministic per-page text without worker thread serialization issues across both real college PDFs and generated files.
+  - PPTX & DOCX: implemented with `jszip`, mapping PPTX slide titles to `## Slide N: <title>` and body text to verbatim paragraphs, and DOCX heading styles (`Heading 1`, `Heading 2`, `Title`) to markdown heading levels (`##`, `###`, etc.) and table structures to clean markdown tables.
+  - Image-only PDFs & PNGs: verified live Google AI Studio API compatibility on `gemini-3.5-flash-lite`. Directly accepts both `image/png` (and JPEG) and `application/pdf` in `inlineData`, executing verbatim OCR transcription without local poppler/canvas binaries. Configured with literal transcription prompt, table formatting, figure tagging (`[diagram: <few words>]`), unreadable text tagging (`[illegible]`), and non-summarizing/non-answering constraints.
+  - Documented library choices and rationale in `spec/decisions.md` (D-015).
+- Implemented `scripts/extract.ts` and added `"extract": "tsx scripts/extract.ts"` to `package.json`.
+  - Consumes `local/plan.json` array of `{ path, include, docType, title }` relative to a source directory.
+  - Formats document root as `# <title>` followed by `## Slide N: <title>` or `## Page N`.
+  - Idempotent and resumable per file (skips existing outputs unless `--force` is specified).
+  - Implements 429 exponential backoff retry for vision API calls.
+  - Individual file failures do not abort the batch.
+  - Writes `local/extraction_report.json` with per-file stats: character count, pages/slides, near-empty pages list, OCR flag, and quality warnings (low text density, high non-alphanumeric ratio).
+  - Strictly avoids printing extracted content or secrets; all generated files live under gitignored `local/`.
+- Verified against a throwaway test suite covering 5 file types: text PDF (2 pages), PPTX (2 slides), DOCX (with Heading 1 and table), image-only PDF (1 page with embedded PNG), and standalone PNG. All 5 succeeded, and re-running confirmed idempotent skipping.
+- Verified test suite (`npm test`, 11/11 passing) and Next.js production build (`npm run build`, exit code 0).
+- Ticked `M1-CONTENT-02a` in `spec/tasks.md`.
+**Did not land:** M1-CONTENT-01b and M1-CONTENT-03 (deliberately not started per instructions).
+**Blockers:** None.
+**Noticed, did not fix:** None.
+**Spec changes:** Updated `spec/tasks.md`, `spec/decisions.md`, `package.json`.
+**Next action:** Pushkar reviews `local/manifest.json`, writes `local/plan.json`, and runs `npm run extract -- "D:\Academics & Study Material\college_study_material\SEM 4\OS"` to extract real OS course materials into `local/extracted/`.
+
+---
+
 ## 2026-11-06 — Antigravity / Session 21 — M1-CONTENT-01a Inventory script & Spec update
 
 **Milestone:** M1 — Real content, one subject.
