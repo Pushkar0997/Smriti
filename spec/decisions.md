@@ -210,3 +210,18 @@ Every non-obvious decision, why, and what was rejected. **This file exists to st
 
 **Revisit if:** Multimodal PDF token sizes exceed inlineData payload limits (20MB) or rate limits bind heavily during large multi-page scanned batches.
 
+---
+
+## D-016 — Parked chunkText optimization in favor of retry hardening and one-time slow ingest (M1-CONTENT-03b)
+
+**Status:** decided
+**Decision:** Parked the algorithmic chunkText optimization on branch `wip/chunk-opt`. Instead, rely on production retry hardening in `lib/gemini.ts` (exponential backoff + jitter for 429, 5xx, and network errors) combined with the shipped, robust `chunkText` implementation on `main` for a one-time slow ingestion.
+**Rationale:**
+- The `wip/chunk-opt` prototype (adaptive chars-per-token ratio with exponential search) missed its efficiency targets (measured 22.7 countTokens calls/chunk vs the target of ≤10) and diverged in emitted boundary content from the legacy chunker on the DBMS fixture.
+- Ingestion is a one-time pipeline executed once per subject milestone, not a hot request-time path. A ~25-minute run for the 25 OS documents is well within free-tier quota limits and operational tolerance, provided network and transient 429/5xx errors are gracefully retried.
+- Hardening `countTokens`, `embedChunks`, and `embedQuery` with exponential backoff and jitter provides permanent resilience without the risk of subtle chunk boundary regressions or breaking INV-1 invariants.
+**Rejected:**
+- *Complex heuristic chunker rewrites on main*: Rejected because the risk of boundary bugs or ungrounded chunk divergence outweighs the CPU/token savings for a one-time offline process.
+**Revisit if:** Re-ingestion becomes frequent (e.g. during frequent curriculum revisions across multiple subjects in M2+) and token quota or wall time becomes a binding operational bottleneck.
+
+

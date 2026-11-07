@@ -42,8 +42,59 @@ export function getGeminiClient(): GoogleGenAI {
 }
 
 /**
+ * Maximum retry attempts for transient API errors (429, 5xx, network).
+ */
+const MAX_RETRIES = 4;
+
+/**
+ * Classify an error as retryable (429, 5xx, or network failure).
+ * Never logs request content per AGENTS.md / INV-3 spirit.
+ */
+function isRetryableError(err: unknown): { retryable: boolean; is429: boolean } {
+  const errObj = typeof err === "object" && err !== null ? (err as Record<string, unknown>) : null;
+  const status = errObj ? (errObj.status ?? errObj.statusCode) : undefined;
+  const msg: string = typeof errObj?.message === "string" ? errObj.message : String(err ?? "");
+
+  const is429 =
+    status === 429 ||
+    msg.includes("429") ||
+    msg.includes("RESOURCE_EXHAUSTED");
+
+  const is5xx =
+    (typeof status === "number" && status >= 500 && status < 600) ||
+    msg.includes("UNAVAILABLE") ||
+    msg.includes("INTERNAL") ||
+    msg.includes("The service is currently unavailable");
+
+  const isNetwork =
+    msg.includes("fetch failed") ||
+    msg.includes("ECONNRESET") ||
+    msg.includes("ECONNREFUSED") ||
+    msg.includes("ETIMEDOUT") ||
+    msg.includes("ENETUNREACH") ||
+    msg.includes("EAI_AGAIN") ||
+    msg.includes("socket hang up") ||
+    msg.includes("getaddrinfo");
+
+  return { retryable: is429 || is5xx || isNetwork, is429 };
+}
+
+/**
+ * Compute exponential backoff delay with jitter.
+ * Base delay doubles each attempt; jitter adds up to 50% of base.
+ */
+function backoffMs(attempt: number, baseMs: number = 1000): number {
+  const exponential = baseMs * Math.pow(2, attempt - 1);
+  const jitter = Math.floor(Math.random() * exponential * 0.5);
+  return exponential + jitter;
+}
+
+/**
  * Count tokens using the Gemini API countTokens endpoint.
  * Pinned in CONTRACT.md: Must use Gemini's own tokenizer, not a character or word-count heuristic.
+ *
+ * Retries with exponential backoff + jitter on 429, 5xx, and network errors.
+ * Never logs request content.
  */
 export async function countTokens(
   text: string,
@@ -55,12 +106,28 @@ export async function countTokens(
   }
 
   const client = getGeminiClient();
-  const response = await client.models.countTokens({
-    model,
-    contents: text,
-  });
 
-  return response.totalTokens ?? 0;
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      const response = await client.models.countTokens({
+        model,
+        contents: text,
+      });
+      return response.totalTokens ?? 0;
+    } catch (err: unknown) {
+      const { retryable } = isRetryableError(err);
+      if (retryable && attempt < MAX_RETRIES) {
+        await new Promise((resolve) =>
+          setTimeout(resolve, backoffMs(attempt))
+        );
+        continue;
+      }
+      throw err;
+    }
+  }
+
+  // Unreachable, but TypeScript needs it
+  return 0;
 }
 
 /**
@@ -78,9 +145,14 @@ export async function embedChunk(
   return results[0];
 }
 
+type EmbedContentResponse = Awaited<ReturnType<GoogleGenAI["models"]["embedContent"]>>;
+
 /**
  * Embed multiple document chunks in batches for retrieval storage.
  * Uses taskType: "RETRIEVAL_DOCUMENT" and outputDimensionality: 768.
+ *
+ * Retries each batch with exponential backoff + jitter on 429, 5xx, and network errors.
+ * Never logs request content.
  */
 export async function embedChunks(
   texts: string[],
@@ -97,17 +169,32 @@ export async function embedChunks(
   for (let i = 0; i < texts.length; i += batchSize) {
     const batch = texts.slice(i, i + batchSize);
 
-    const response = await client.models.embedContent({
-      model: EMBEDDING_MODEL,
-      contents: batch,
-      config: {
-        taskType: "RETRIEVAL_DOCUMENT",
-        outputDimensionality: EMBEDDING_DIM,
-        ...(title ? { title } : {}),
-      },
-    });
+    let response: EmbedContentResponse | undefined;
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        response = await client.models.embedContent({
+          model: EMBEDDING_MODEL,
+          contents: batch,
+          config: {
+            taskType: "RETRIEVAL_DOCUMENT",
+            outputDimensionality: EMBEDDING_DIM,
+            ...(title ? { title } : {}),
+          },
+        });
+        break;
+      } catch (err: unknown) {
+        const { retryable } = isRetryableError(err);
+        if (retryable && attempt < MAX_RETRIES) {
+          await new Promise((resolve) =>
+            setTimeout(resolve, backoffMs(attempt, 2000))
+          );
+          continue;
+        }
+        throw err;
+      }
+    }
 
-    if (!response.embeddings || response.embeddings.length === 0) {
+    if (!response?.embeddings || response.embeddings.length === 0) {
       throw new Error(
         `Gemini embedding API returned no embeddings for batch starting at index ${i}.`
       );
@@ -137,16 +224,32 @@ export async function embedQuery(query: string): Promise<number[]> {
   }
 
   const client = getGeminiClient();
-  const response = await client.models.embedContent({
-    model: EMBEDDING_MODEL,
-    contents: query,
-    config: {
-      taskType: "RETRIEVAL_QUERY",
-      outputDimensionality: EMBEDDING_DIM,
-    },
-  });
 
-  const embedding = response.embeddings?.[0]?.values;
+  let response: EmbedContentResponse | undefined;
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      response = await client.models.embedContent({
+        model: EMBEDDING_MODEL,
+        contents: query,
+        config: {
+          taskType: "RETRIEVAL_QUERY",
+          outputDimensionality: EMBEDDING_DIM,
+        },
+      });
+      break;
+    } catch (err: unknown) {
+      const { retryable } = isRetryableError(err);
+      if (retryable && attempt < MAX_RETRIES) {
+        await new Promise((resolve) =>
+          setTimeout(resolve, backoffMs(attempt))
+        );
+        continue;
+      }
+      throw err;
+    }
+  }
+
+  const embedding = response?.embeddings?.[0]?.values;
   if (!embedding || embedding.length !== EMBEDDING_DIM) {
     throw new Error(
       `Expected query embedding dimension ${EMBEDDING_DIM}, but received ${embedding?.length ?? 0}.`
@@ -212,3 +315,6 @@ export async function generateGroundedAnswer(
 
   return answer;
 }
+
+// Exported for testing retry logic
+export { isRetryableError, backoffMs, MAX_RETRIES };

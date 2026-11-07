@@ -6,6 +6,41 @@ Every session writes an entry, including failed sessions. "Noticed, did not fix"
 
 ---
 
+## 2026-11-07 — Antigravity / Session 26 — M1-CONTENT-03 ingest pipeline & retry hardening (M1-CONTENT-03b deferred)
+
+**Milestone:** M1 — Real content, one subject.
+**Tasks attempted:** Land permanent retry hardening in `lib/gemini.ts`, create `tests/retry.test.ts` for retry classification/backoff and chunkText mock invariants, implement ingestion pipeline `scripts/ingest_plan.ts` with `--dry-run` and `--only` filter, run live smoke dry-run on sample paper, park `M1-CONTENT-03b` optimization per D-016.
+**Landed:**
+- Hardened `lib/gemini.ts`:
+  - Implemented `isRetryableError`, `backoffMs`, and bounded retry loops (up to 4 attempts) with exponential backoff + jitter for `countTokens`, `embedChunks`, and `embedQuery` on HTTP 429, 5xx, and network errors (fetch failed, ECONNRESET, EAI_AGAIN).
+  - Resolved all `no-explicit-any` ESLint errors using `unknown` plus runtime type narrowing (`errObj`, `EmbedContentResponse`).
+  - Request content is never logged per AGENTS.md / INV-3.
+- Created `tests/retry.test.ts`:
+  - 10 unit tests for `isRetryableError` classification.
+  - 3 unit tests for `backoffMs` backoff and jitter calculations.
+  - 9 mock-tokenizer invariant tests for `chunkText` on current `main` (normal prose, dense numeric tables, whitespace-heavy text, overlap ≤50 tokens, and boundary edge cases). All 22 tests pass cleanly in 1.4s.
+- Created `scripts/ingest_plan.ts` and npm script `"ingest:plan"`:
+  - Supports `--dry-run` (chunks files without embedding calls or database writes, writes `local/chunk_report.json`), `--only <title-substring>` repeatable filter, and real mode with per-title idempotency and error isolation.
+  - Removed unused variable and eliminated `any` types.
+- Executed live smoke test with `--dry-run --only "TA-II"`:
+  - Filtered to `[QB] TA-II March 2023 Sample Paper` (2,592 chars, 2 chunks, tokens min 332 / avg 412 / max 492, 27 countTokens calls, 0 errors).
+  - Verified `documents` row count in Supabase remained exactly 1 (unchanged before and after).
+- Updated documentation and specs:
+  - Recorded decision `D-016` in `spec/decisions.md`: parked chunkText algorithmic optimization on branch `wip/chunk-opt`, relying on retry hardening + one-time slow ingest.
+  - Updated `spec/tasks.md`: marked `M1-CONTENT-03b` DEFERRED with results and pointer to `wip/chunk-opt`; marked `M1-CONTENT-03` code complete with dry-run verified and real ingestion pending subject filter M1-CONTENT-01b.
+- Build & test verification:
+  - `npm run build`: Green (exit code 0).
+  - `npm test`: Green (33/33 tests pass, exit code 0).
+  - `npm run lint`: Zero lint errors in touched files (`lib/gemini.ts`, `scripts/ingest_plan.ts`, `tests/retry.test.ts`). Pre-existing lint errors in `scripts/extract.ts` and `scripts/inventory.ts` left untouched.
+- Confirmed zero parked files exist on `main` (`lib/ingest.ts` clean, `tests/chunk-opt.test.ts` and `tests/chunk_text_legacy.ts` absent from main).
+**Did not land:** Full dry-run across all 25 files and real ingestion (deliberately deferred until subject filter M1-CONTENT-01b lands).
+**Blockers:** None.
+**Noticed, did not fix:** Pre-existing `@typescript-eslint/no-explicit-any` errors in `scripts/extract.ts` (2) and `scripts/inventory.ts` (6) from earlier sessions.
+**Spec changes:** Updated `spec/tasks.md` and added D-016 to `spec/decisions.md`.
+**Next action:** Implement M1-CONTENT-01b (subject filter on retrieval & schema update in Supabase) before full OS ingestion.
+
+---
+
 ## 2026-11-07 — Antigravity / Session 25 — M1-CONTENT-03b / M1-CONTENT-03 (Step 0 Audit) [IN PROGRESS]
 
 **Milestone:** M1 — Real content, one subject.
