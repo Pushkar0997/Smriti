@@ -34,12 +34,23 @@ export interface IngestDocumentResult {
 }
 
 /**
+ * Default chars-per-token estimate. Gemini embedding tokenizer typically yields
+ * ~3.5–4.5 chars/token for English prose; we use a conservative initial estimate.
+ * The ratio is recalibrated after the first chunk from real countTokens data.
+ */
+const INITIAL_CPT_ESTIMATE = 4.0;
+
+/**
  * Split text into chunks conforming strictly to CONTRACT.md:
  * - Tokenizer: Gemini API's own countTokens endpoint (passed via countTokensFn).
  * - Fixed chunk size ceiling: 500 tokens (hard ceiling, never overflows).
  * - Best-effort paragraph boundary splitting; single paragraphs > 500 tokens split mid-paragraph.
  * - 50-token overlap preserved across all splits, including mid-paragraph ones.
  * - Section label: nearest markdown heading if present, otherwise "chunk N" (1-indexed).
+ *
+ * Optimised (M1-CONTENT-03b): uses adaptive chars-per-token ratio to narrow binary search
+ * starting point. Searches outward (exponential probe, then binary) from the estimate.
+ * Gemini countTokens still decides every boundary.
  */
 export async function chunkText(
   text: string,
@@ -50,18 +61,8 @@ export async function chunkText(
   }
 
   const chunks: ChunkItem[] = [];
-  const tokenCache = new Map<string, number>();
-
-  async function getTokens(str: string): Promise<number> {
-    const trimmed = str.trim();
-    if (!trimmed) return 0;
-    if (tokenCache.has(str)) {
-      return tokenCache.get(str)!;
-    }
-    const count = await countTokensFn(str);
-    tokenCache.set(str, count);
-    return count;
-  }
+  // Adaptive chars-per-token ratio, recalibrated after each chunk
+  let cpt = INITIAL_CPT_ESTIMATE;
 
   // Extract markdown headings with their character index in the text
   const headingRegex = /^(#{1,6})\s+(.+)$/gm;
@@ -86,6 +87,100 @@ export async function chunkText(
     return nearest || `chunk ${chunkNumber}`;
   }
 
+  /**
+   * Find the maximum character length from `source` such that countTokens <= targetTokens.
+   * Uses adaptive estimate to probe outward, then binary search to refine.
+   *
+   * Returns { charLen, tokens } where charLen is the max chars fitting and tokens is the count.
+   */
+  async function findMaxChars(
+    source: string,
+    targetTokens: number
+  ): Promise<{ charLen: number; tokens: number }> {
+    // Heuristic estimate of character position
+    const estimate = Math.min(
+      Math.floor(targetTokens * cpt),
+      source.length
+    );
+
+    // If the estimate covers the whole remaining text, just check it
+    if (estimate >= source.length) {
+      const t = await countTokensFn(source);
+      if (t <= targetTokens) {
+        return { charLen: source.length, tokens: t };
+      }
+      // Estimate was too optimistic; the whole text exceeds target
+      // Fall through to search below with knowledge that source.length is too much
+    }
+
+    // Exponential probe outward from estimate to bracket the true boundary
+    let lo: number;
+    let hi: number;
+
+    // Check at the estimate point
+    const estSlice = source.slice(0, estimate);
+    const estTokens = await countTokensFn(estSlice);
+
+    if (estTokens <= targetTokens) {
+      // Estimate fits — probe upward to find where it breaks
+      lo = estimate;
+      hi = source.length;
+      let step = Math.max(Math.floor(estimate * 0.25), 100);
+      let probe = estimate;
+      while (probe < source.length) {
+        probe = Math.min(probe + step, source.length);
+        const t = await countTokensFn(source.slice(0, probe));
+        if (t > targetTokens) {
+          hi = probe;
+          break;
+        }
+        lo = probe;
+        if (probe >= source.length) {
+          return { charLen: source.length, tokens: t };
+        }
+        step = step * 2;
+      }
+    } else {
+      // Estimate too large — probe downward
+      hi = estimate;
+      lo = 0;
+      let step = Math.max(Math.floor(estimate * 0.25), 100);
+      let probe = estimate;
+      while (probe > 0) {
+        probe = Math.max(probe - step, 1);
+        const t = await countTokensFn(source.slice(0, probe));
+        if (t <= targetTokens) {
+          lo = probe;
+          break;
+        }
+        hi = probe;
+        step = step * 2;
+      }
+    }
+
+    // Binary search within [lo, hi]
+    let bestLen = lo;
+    let bestTokens = 0;
+    while (lo <= hi) {
+      const mid = Math.floor((lo + hi) / 2);
+      const t = await countTokensFn(source.slice(0, mid));
+      if (t <= targetTokens) {
+        bestLen = mid;
+        bestTokens = t;
+        lo = mid + 1;
+      } else {
+        hi = mid - 1;
+      }
+    }
+
+    // Verify the best fit if we haven't already
+    if (bestTokens === 0 && bestLen > 0) {
+      bestTokens = await countTokensFn(source.slice(0, bestLen));
+    }
+
+    return { charLen: bestLen, tokens: bestTokens };
+  }
+
   let startIndex = 0;
   let chunkIndex = 1;
 
@@ -95,7 +190,8 @@ export async function chunkText(
       break;
     }
 
-    const remainingTokens = await getTokens(remainingText);
+    // Check if remaining text fits in one chunk
+    const remainingTokens = await countTokensFn(remainingText);
     if (remainingTokens <= CHUNK_SIZE_TOKENS) {
       chunks.push({
         content: remainingText.trim(),
@@ -105,33 +201,17 @@ export async function chunkText(
       break;
     }
 
-    // Binary search for maximum character slice that satisfies token count <= CHUNK_SIZE_TOKENS
-    let low = 1;
-    let high = remainingText.length;
-    let bestFitEnd = 1;
+    // Find the maximum character cut fitting 500 tokens
+    const { charLen: bestFitEnd } = await findMaxChars(remainingText, CHUNK_SIZE_TOKENS);
 
-    while (low <= high) {
-      const mid = Math.floor((low + high) / 2);
-      const slice = remainingText.slice(0, mid);
-      const tokens = await getTokens(slice);
-
-      if (tokens <= CHUNK_SIZE_TOKENS) {
-        bestFitEnd = mid;
-        low = mid + 1;
-      } else {
-        high = mid - 1;
-      }
-    }
-
-    // bestFitEnd is the maximum character cut where tokens <= 500
-    // Try paragraph-boundary splitting first within [0, bestFitEnd]
+    // Try paragraph-boundary splitting within [0, bestFitEnd]
     const candidateSlice = remainingText.slice(0, bestFitEnd);
     const lastParagraphBreak = candidateSlice.lastIndexOf("\n\n");
 
     let chosenEnd = bestFitEnd;
     if (lastParagraphBreak > 0) {
       const paraSlice = candidateSlice.slice(0, lastParagraphBreak).trimEnd();
-      const paraTokens = await getTokens(paraSlice);
+      const paraTokens = await countTokensFn(paraSlice);
       // Prefer paragraph break if it retains a meaningful chunk size (at least 50 tokens)
       if (paraTokens >= 50) {
         chosenEnd = lastParagraphBreak;
@@ -158,7 +238,12 @@ export async function chunkText(
     }
 
     const chunkContent = remainingText.slice(0, chosenEnd).trim();
-    const chunkTokens = await getTokens(chunkContent);
+    const chunkTokens = await countTokensFn(chunkContent);
+
+    // Update adaptive chars-per-token ratio
+    if (chunkTokens > 0) {
+      cpt = chunkContent.length / chunkTokens;
+    }
 
     chunks.push({
       content: chunkContent,
@@ -169,28 +254,86 @@ export async function chunkText(
 
     const chunkAbsEnd = startIndex + chosenEnd;
 
-    // Calculate overlap: find start position for next chunk such that
-    // the suffix of chunkContent has <= CHUNK_OVERLAP_TOKENS (50)
-    let overlapLow = 1;
-    let overlapHigh = chunkContent.length;
-    let bestOverlapLen = 0;
+    // Calculate overlap using heuristic-guided search for suffix of chunkContent
+    const overlapEstChars = Math.min(
+      Math.floor(CHUNK_OVERLAP_TOKENS * cpt),
+      chunkContent.length
+    );
 
-    while (overlapLow <= overlapHigh) {
-      const mid = Math.floor((overlapLow + overlapHigh) / 2);
-      const suffix = chunkContent.slice(chunkContent.length - mid);
-      const tokens = await getTokens(suffix);
+    let overlapLen = 0;
+    {
+      // Start from heuristic estimate and search outward
+      const estLen = Math.min(overlapEstChars, chunkContent.length);
+      const suffix = chunkContent.slice(chunkContent.length - estLen);
+      const estTokens = await countTokensFn(suffix);
 
-      if (tokens <= CHUNK_OVERLAP_TOKENS) {
-        bestOverlapLen = mid;
-        overlapLow = mid + 1;
+      if (estTokens <= CHUNK_OVERLAP_TOKENS) {
+        // Probe upward
+        overlapLen = estLen;
+        let step = Math.max(Math.floor(estLen * 0.5), 50);
+        let probe = estLen;
+        let probHi = chunkContent.length;
+        while (probe < chunkContent.length) {
+          probe = Math.min(probe + step, chunkContent.length);
+          const s = chunkContent.slice(chunkContent.length - probe);
+          const t = await countTokensFn(s);
+          if (t > CHUNK_OVERLAP_TOKENS) {
+            probHi = probe;
+            break;
+          }
+          overlapLen = probe;
+          if (probe >= chunkContent.length) break;
+          step = step * 2;
+        }
+        // Binary refine between overlapLen and probHi
+        let bLo = overlapLen;
+        let bHi = probHi;
+        while (bLo <= bHi) {
+          const mid = Math.floor((bLo + bHi) / 2);
+          const s = chunkContent.slice(chunkContent.length - mid);
+          const t = await countTokensFn(s);
+          if (t <= CHUNK_OVERLAP_TOKENS) {
+            overlapLen = mid;
+            bLo = mid + 1;
+          } else {
+            bHi = mid - 1;
+          }
+        }
       } else {
-        overlapHigh = mid - 1;
+        // Probe downward
+        let probLo = 0;
+        let step = Math.max(Math.floor(estLen * 0.5), 50);
+        let probe = estLen;
+        while (probe > 0) {
+          probe = Math.max(probe - step, 1);
+          const s = chunkContent.slice(chunkContent.length - probe);
+          const t = await countTokensFn(s);
+          if (t <= CHUNK_OVERLAP_TOKENS) {
+            probLo = probe;
+            break;
+          }
+          step = step * 2;
+        }
+        // Binary refine
+        let bLo = probLo;
+        let bHi = estLen;
+        while (bLo <= bHi) {
+          const mid = Math.floor((bLo + bHi) / 2);
+          const s = chunkContent.slice(chunkContent.length - mid);
+          const t = await countTokensFn(s);
+          if (t <= CHUNK_OVERLAP_TOKENS) {
+            overlapLen = mid;
+            bLo = mid + 1;
+          } else {
+            bHi = mid - 1;
+          }
+        }
       }
     }
 
     // Try snapping overlap start forward to a space boundary
-    let nextStart = chunkAbsEnd - bestOverlapLen;
-    if (bestOverlapLen > 0 && nextStart < chunkAbsEnd) {
+    let nextStart = chunkAbsEnd - overlapLen;
+    if (overlapLen > 0 && nextStart < chunkAbsEnd) {
       const spaceIdx = text.indexOf(" ", nextStart);
       if (spaceIdx !== -1 && spaceIdx < chunkAbsEnd) {
         nextStart = spaceIdx + 1;

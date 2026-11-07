@@ -9,6 +9,7 @@
     "lint": "eslint",
     "test": "tsx --test tests/**/*.test.ts",
     "ingest:fixture": "tsx scripts/ingest_fixture.ts",
+    "ingest:plan": "tsx scripts/ingest_plan.ts",
     "inventory": "tsx scripts/inventory.ts",
     "extract": "tsx scripts/extract.ts"
   },
