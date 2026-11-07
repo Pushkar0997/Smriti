@@ -6,6 +6,33 @@ Every session writes an entry, including failed sessions. "Noticed, did not fix"
 
 ---
 
+## 2026-11-07 — Antigravity / Session 25 — M1-CONTENT-03b / M1-CONTENT-03 (Step 0 Audit) [IN PROGRESS]
+
+**Milestone:** M1 — Real content, one subject.
+**Tasks attempted:** Step 0 read-only audit of uncommitted changes from interrupted recovery session across sub-parts A (chunkText optimization), B (Gemini retry hardening), and C (M1-CONTENT-03 ingest_plan pipeline).
+**Uncommitted files audited:**
+- `lib/gemini.ts` (modified, Sub-part B): Retry hardening with backoff + jitter for `countTokens`, `embedChunks`, `embedQuery`. Status: Partial / broken on lint (`any` types prevent build).
+- `lib/ingest.ts` (modified, Sub-part A): Optimized `chunkText` using adaptive cpt and exponential probe. Status: Partial / broken on target metrics (22.7 calls/chunk in mock vs target ≤10) and live DBMS fixture equivalence test.
+- `package.json` (modified, Sub-part C): Added `"ingest:plan"` script. Status: Complete.
+- `spec/tasks.md` (modified, Sub-parts A & C): Backlog definitions for `M1-CONTENT-03b` and `M1-CONTENT-03`. Status: Complete.
+- `scripts/ingest_plan.ts` (untracked, Sub-part C): Ingestion pipeline supporting `--dry-run` and real mode. Status: Partial (unused import, `any` type, unverified dry-run).
+- `tests/chunk-opt.test.ts` (untracked, Sub-parts A & B): Mock invariant and retry test suite + live equivalence checks. Status: Partial (2 failing tests: efficiency target and DBMS equivalence).
+- `tests/chunk_text_legacy.ts` (untracked, Sub-part A): Legacy reference `chunkText` implementation for equivalence testing. Status: Complete.
+**Landed:**
+- Read-only audit completed; verified current status of build (FAIL), tests (FAIL: 34 pass, 2 fail), and lint (FAIL).
+- Audit recorded per Step 0.
+**Did not land:**
+- Sub-parts A, B, and C not completed or verified.
+**Blockers:** Tree is not green; pausing per Step 0 mandate to await user confirmation.
+**Noticed, did not fix:**
+- `npm run build` fails because `next build` runs ESLint which disallows `@typescript-eslint/no-explicit-any` in `lib/gemini.ts`.
+- `chunkText` in `lib/ingest.ts` does not meet the ≤10 calls/chunk target (requires Newton's method proportional adjustment to replace binary search iterations).
+- Live DBMS fixture equivalence in `tests/chunk-opt.test.ts` fails on chunk 7 content divergence.
+**Spec changes:** None in this step.
+**Next action:** Await user approval on Step 0 audit findings before proceeding to Step 1.
+
+---
+
 ## 2026-11-07 — Antigravity / Session 24 — M1-CONTENT-03a Ingestion scale test & chunkText analysis
 
 **Milestone:** M1 — Real content, one subject.
