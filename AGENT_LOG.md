@@ -6,6 +6,41 @@ Every session writes an entry, including failed sessions. "Noticed, did not fix"
 
 ---
 
+## 2026-11-07 — Antigravity / Session 24 — M1-CONTENT-03a Ingestion scale test & chunkText analysis
+
+**Milestone:** M1 — Real content, one subject.
+**Tasks attempted:** Ingestion scale test on largest extracted file (`OS_UNIT-3_UNIT-4_Combined Notes.md`), pre-run token counting analysis, full plan projection, throwaway database cleanup, and chunkText optimization recommendation.
+**Landed:**
+- Conducted algorithmic and mathematical analysis of `chunkText` in `lib/ingest.ts`:
+  - Identified uncached $O(\log_2(\text{remaining\_chars}))$ forward binary searches and $O(\log_2(\text{chunk\_length}))$ overlap searches per chunk, plus uncached whole-suffix checks.
+  - Formulated theoretical estimate: $\approx 29$ calls/chunk, $T(N) \approx 0.064 \times N$ calls for $N$ source tokens.
+  - Estimated ~1,368 calls and ~4.5M characters sent for the largest file (85,763 chars).
+- Executed offline mock validation to verify control flow, hard cap handling, and cleanup semantics without network consumption.
+- Executed live throwaway ingestion of `local/extracted/OS_UNIT-3_UNIT-4_Combined Notes.md` as document `SCALETEST` (subject: `OS-scaletest`):
+  - Completed in 359.92s (5m 59.92s) wall time.
+  - Actual `countTokens` calls: 1,708 calls (~27.1 calls/chunk, closely matching pre-run estimate).
+  - Actual characters sent to `countTokens`: 6,890,259 characters.
+  - Actual embedding API calls: 4 calls (batch size 20, 63 chunks).
+  - Rate limit errors (429s): 0 encountered.
+  - Chunks generated: 63 chunks (tokens: min 50, avg 364, max 498).
+  - Cleaned up throwaway document and all 63 chunks in `finally` block; verified via query that 0 documents and 0 chunks remain in Supabase.
+- Projected metrics across all 25 extracted files (366,321 chars, ~4.27x):
+  - Projected countTokens calls: 7,295 calls.
+  - Projected Embedding API calls: 17 calls.
+  - Projected wall time: ~25.6 minutes (1,537s).
+  - Projected characters sent: ~29.43M characters.
+- Reverted temporary telemetry instrumentation from `lib/gemini.ts`; confirmed zero instrumentation counters committed.
+- Maintained strict confidentiality: zero extracted course content printed or logged.
+- Verified test suite (`npm test`, 11/11 passing) and Next.js production build (`npm run build`, exit code 0).
+- Ticked `M1-CONTENT-03a` in `spec/tasks.md`.
+**Did not land:** `chunkText` optimization (deliberately deferred to follow-up session per user instructions).
+**Blockers:** None.
+**Noticed, did not fix:** `chunkText` performs uncached binary search over character offsets from 1 to remaining text length for each chunk, sending large substrings (up to 85,000 chars) repeatedly to the API. Optimization (e.g. local character-heuristic bracket narrowing before calling countTokens, or token-ratio bounding) will reduce API calls by ~80-90% and save ~20 minutes during full M1 ingestion.
+**Spec changes:** Ticked `M1-CONTENT-03a` in `spec/tasks.md`.
+**Next action:** Pushkar reviews scale test numbers and decides whether to optimize `chunkText` before M1-CONTENT-01b / M1-CONTENT-03.
+
+---
+
 ## 2026-11-06 — Antigravity / Session 23 — Spec & plan updates (M1-CONTENT-01b, 03a, 03)
 
 **Milestone:** M1 — Real content, one subject.
