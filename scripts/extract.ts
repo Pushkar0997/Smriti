@@ -349,11 +349,14 @@ export async function runGeminiVisionOcr(
         throw new Error("Gemini Vision OCR returned empty response text.");
       }
       return text;
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const errObj = err && typeof err === "object" ? (err as Record<string, unknown>) : null;
+      const status = typeof errObj?.status === "number" ? errObj.status : null;
+      const message = typeof errObj?.message === "string" ? errObj.message : String(err);
       const is429 =
-        err?.status === 429 ||
-        err?.message?.includes("429") ||
-        err?.message?.includes("RESOURCE_EXHAUSTED");
+        status === 429 ||
+        message.includes("429") ||
+        message.includes("RESOURCE_EXHAUSTED");
 
       if (is429 && attempt < maxRetries) {
         const jitter = Math.floor(Math.random() * 500);
@@ -583,8 +586,9 @@ export async function runExtraction(options: ExtractOptions): Promise<Extraction
         ocrUsed,
         warnings,
       });
-    } catch (err: any) {
-      console.error(`  -> Failed extracting ${item.path}: ${err.message}`);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error(`  -> Failed extracting ${item.path}: ${msg}`);
       failedCount++;
       fileReports.push({
         path: item.path,
@@ -597,7 +601,7 @@ export async function runExtraction(options: ExtractOptions): Promise<Extraction
         nearEmptyPages: [],
         ocrUsed: false,
         warnings: ["Extraction failed"],
-        error: err.message,
+        error: msg,
       });
     }
   }

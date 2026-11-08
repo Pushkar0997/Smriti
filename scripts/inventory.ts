@@ -63,16 +63,19 @@ export async function inspectPdf(
       const contentsObj = page.node.context.lookup(rawContents);
       if (!contentsObj) continue;
 
+      const contentsRecord = contentsObj as unknown as { asArray?: () => unknown[] };
       const streams =
-        typeof (contentsObj as any).asArray === "function"
-          ? (contentsObj as any).asArray()
+        typeof contentsRecord.asArray === "function"
+          ? contentsRecord.asArray()
           : [contentsObj];
 
       for (const s of streams) {
-        const stream = page.node.context.lookup(s);
-        if (!stream || typeof (stream as any).getContents !== "function") continue;
+        const stream = page.node.context.lookup(s as Parameters<typeof page.node.context.lookup>[0]) as unknown as {
+          getContents?: () => Uint8Array | number[];
+        } | null;
+        if (!stream || typeof stream.getContents !== "function") continue;
 
-        const raw = Buffer.from((stream as any).getContents());
+        const raw = Buffer.from(stream.getContents());
         let textContent = "";
         try {
           textContent = zlib.inflateSync(raw).toString("latin1");
@@ -90,8 +93,9 @@ export async function inspectPdf(
     }
 
     return { pageCount, hasTextLayer };
-  } catch (err: any) {
-    console.warn(`[inventory] Warning: Failed to parse PDF: ${err.message}`);
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.warn(`[inventory] Warning: Failed to parse PDF: ${msg}`);
     return { pageCount: 0, hasTextLayer: false };
   }
 }
@@ -137,8 +141,9 @@ export async function inspectOffice(
     }
 
     return { slideOrPageCount: null };
-  } catch (err: any) {
-    console.warn(`[inventory] Warning: Failed to parse OpenXML archive: ${err.message}`);
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.warn(`[inventory] Warning: Failed to parse OpenXML archive: ${msg}`);
     return { slideOrPageCount: null };
   }
 }
