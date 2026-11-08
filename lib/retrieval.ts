@@ -9,6 +9,11 @@ export const TOP_K = 5;
 export const SIMILARITY_THRESHOLD = 0.65;
 export const RELEVANCE_MARGIN = 0.06;
 
+/**
+ * Single active subject for M1 pilot per M1-CONTENT-01b.
+ */
+export const ACTIVE_SUBJECT = "OS";
+
 export interface RetrievedChunk {
   id: string;
   documentId: string;
@@ -22,13 +27,15 @@ export interface RetrieveOptions {
   topK?: number;
   matchThreshold?: number;
   supabaseClient?: SupabaseClient;
+  subject?: string;
 }
 
 /**
  * Embed an incoming user query and perform vector cosine similarity search in Supabase pgvector.
  *
  * - Uses embedQuery from lib/gemini.ts (RETRIEVAL_QUERY task type, 768 dimensions).
- * - Invokes match_chunks RPC in Supabase, passing TOP_K = 5 and SIMILARITY_THRESHOLD = 0.65 per CONTRACT.md (D-011).
+ * - Invokes match_chunks RPC in Supabase, passing TOP_K = 5, SIMILARITY_THRESHOLD = 0.65,
+ *   and optional target_subject per M1-CONTENT-01b.
  * - Returns top-k chunks with their similarity scores and document titles.
  */
 export async function retrieveChunks(
@@ -57,11 +64,37 @@ export async function retrieveChunks(
   const queryEmbedding = await embedQuery(trimmed);
 
   // 2. Call match_chunks RPC in Supabase pgvector
-  const { data, error } = await supabase.rpc("match_chunks", {
+  const rpcParams: {
+    query_embedding: number[];
+    match_threshold: number;
+    match_count: number;
+    target_subject?: string | null;
+  } = {
     query_embedding: queryEmbedding,
     match_threshold: matchThreshold,
     match_count: topK,
-  });
+  };
+  if (options?.subject !== undefined && options?.subject !== null) {
+    rpcParams.target_subject = options.subject;
+  }
+
+  let { data, error } = await supabase.rpc("match_chunks", rpcParams);
+
+  // If the function signature with target_subject doesn't exist yet on remote DB
+  // (e.g. migration 01b pending in PostgREST schema cache) and target_subject was provided,
+  // gracefully fall back to 3-argument call
+  if (
+    error &&
+    rpcParams.target_subject &&
+    (error.message?.includes("Could not find the function") ||
+      (error as { code?: string }).code === "PGRST202" ||
+      (error as { code?: string }).code === "42883")
+  ) {
+    delete rpcParams.target_subject;
+    const fallback = await supabase.rpc("match_chunks", rpcParams);
+    data = fallback.data;
+    error = fallback.error;
+  }
 
   if (error) {
     throw new Error(`Supabase match_chunks RPC failed: ${error.message}`);

@@ -1,5 +1,5 @@
--- Smriti — Supabase Schema (M0-SETUP-02)
--- Architecture reference: spec/architecture.md §3 & CONTRACT.md
+-- Smriti — Supabase Schema
+-- Architecture reference: spec/architecture.md §3, CONTRACT.md & Migration 01b
 
 -- 1. Enable pgvector extension
 create extension if not exists vector;
@@ -9,6 +9,7 @@ create table if not exists documents (
   id uuid primary key default gen_random_uuid(),
   title text not null,
   subject text not null,
+  doc_type text check (doc_type is null or doc_type in ('QB', 'Slides', 'Notes', 'Assignment', 'Worked')),
   uploaded_at timestamptz not null default timezone('utc'::text, now())
 );
 
@@ -38,11 +39,12 @@ alter table documents enable row level security;
 alter table chunks enable row level security;
 alter table query_counts enable row level security;
 
--- 7. Function: match_chunks for vector cosine similarity search
+-- 7. Function: match_chunks for vector cosine similarity search with optional subject filter
 create or replace function match_chunks (
   query_embedding vector(768),
   match_threshold float default 0.75,
-  match_count int default 5
+  match_count int default 5,
+  target_subject text default null
 )
 returns table (
   id uuid,
@@ -64,6 +66,7 @@ as $$
   from chunks
   join documents on documents.id = chunks.document_id
   where 1 - (chunks.embedding <=> query_embedding) >= match_threshold
+    and (target_subject is null or documents.subject = target_subject)
   order by chunks.embedding <=> query_embedding
   limit match_count;
 $$;
@@ -87,4 +90,3 @@ grant all on all routines in schema public to service_role;
 alter default privileges in schema public grant all on tables to service_role;
 alter default privileges in schema public grant all on routines to service_role;
 alter default privileges in schema public grant all on sequences to service_role;
-

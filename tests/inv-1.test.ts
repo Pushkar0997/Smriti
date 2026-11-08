@@ -1,6 +1,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { SupabaseClient } from "@supabase/supabase-js";
+import { getSupabaseAdmin } from "../lib/supabase";
 import {
   SIMILARITY_THRESHOLD,
   RELEVANCE_MARGIN,
@@ -362,8 +363,23 @@ describe("INV-1: Grounded answers only", () => {
         return "Mocked grounded answer.";
       };
 
+      // Look up the DBMS test fixture's stored subject from Supabase
+      const supabase = getSupabaseAdmin();
+      const { data: fixtureDoc, error: fixtureErr } = await supabase
+        .from("documents")
+        .select("subject")
+        .eq("title", "DBMS-Test-Fixture.md")
+        .single();
+
+      if (fixtureErr || !fixtureDoc) {
+        throw new Error(
+          `Failed to find DBMS test fixture document in Supabase: ${fixtureErr?.message ?? "not found"}`
+        );
+      }
+      const fixtureSubject = fixtureDoc.subject;
+
       const query = "Explain the ARIES recovery protocol and its three distinct phases";
-      const result = await executeGroundedQuery(query, mockLLM);
+      const result = await executeGroundedQuery(query, mockLLM, { subject: fixtureSubject });
 
       // Verify LLM was invoked with qualifying chunks filtered by RELEVANCE_MARGIN
       assert.strictEqual(llmCallCount, 1, "LLM should have been called for matching query");

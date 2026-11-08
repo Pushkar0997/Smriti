@@ -191,7 +191,7 @@ export default function Home() {
           <div>
             <h1 className="app-title">Smriti</h1>
             <p className="app-subtitle">
-              Exam preparation assistant for MIT-ADT — target subject: OS (test data currently loaded: DBMS sample fixture)
+              Exam preparation assistant for MIT-ADT — Operating Systems (OS)
             </p>
           </div>
           {accessCode ? (
@@ -265,7 +265,7 @@ export default function Home() {
                   className="form-textarea"
                   value={currentQuery}
                   onChange={(e) => setCurrentQuery(e.target.value)}
-                  placeholder="Ask a question from DBMS (e.g. Explain the ARIES recovery protocol)..."
+                  placeholder="Ask a question from OS (e.g. What are the four necessary conditions for deadlock?)..."
                   disabled={isLoading}
                   rows={3}
                   onKeyDown={(e) => {
@@ -299,20 +299,30 @@ export default function Home() {
                 className="btn-secondary"
                 disabled={isLoading}
                 onClick={() =>
-                  handleAsk("Explain the ARIES recovery protocol and its three distinct phases.")
+                  handleAsk("What are the four necessary conditions for a deadlock to occur?")
                 }
               >
-                ARIES protocol (Match)
+                Deadlock Conditions (Match)
               </button>
               <button
                 type="button"
                 className="btn-secondary"
                 disabled={isLoading}
                 onClick={() =>
-                  handleAsk("Explain Write Skew anomaly under Snapshot Isolation with an example.")
+                  handleAsk("Explain the difference between paging and segmentation in memory management.")
                 }
               >
-                Write Skew (Match)
+                Paging vs Segmentation (Match)
+              </button>
+              <button
+                type="button"
+                className="btn-secondary"
+                disabled={isLoading}
+                onClick={() =>
+                  handleAsk("How does Round Robin CPU scheduling work with time quantum?")
+                }
+              >
+                Round Robin (Match)
               </button>
               <button
                 type="button"

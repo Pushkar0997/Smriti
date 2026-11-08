@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { executeGroundedQuery } from "@/lib/retrieval";
+import { executeGroundedQuery, ACTIVE_SUBJECT } from "@/lib/retrieval";
 import { generateGroundedAnswer } from "@/lib/gemini";
 
 export async function POST(request: Request) {
@@ -56,8 +56,11 @@ export async function POST(request: Request) {
 
   try {
     // 3. Execute grounded query: retrieval -> ground-check -> LLM generation
+    // Filter by ACTIVE_SUBJECT ("OS") per M1-CONTENT-01b
     // Strict INV-3: never log query text to console, DB, or external systems
-    const result = await executeGroundedQuery(query.trim(), generateGroundedAnswer);
+    const result = await executeGroundedQuery(query.trim(), generateGroundedAnswer, {
+      subject: ACTIVE_SUBJECT,
+    });
     return NextResponse.json(result);
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Internal query error";
