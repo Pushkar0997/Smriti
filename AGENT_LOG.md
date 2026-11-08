@@ -6,6 +6,52 @@ Every session writes an entry, including failed sessions. "Noticed, did not fix"
 
 ---
 
+## 2026-11-08 — Antigravity / Session 27 — Ingestion safety, lint fixes, & M1-CONTENT-01b subject filter
+
+**Milestone:** M1 — Real content, one subject.
+**Tasks attempted:**
+1. Make `scripts/ingest_plan.ts` safe by default (require positional word `commit` for real mode; no arguments = dry-run; print MODE on first line and existing subject doc count in real mode; preserve `--only` and `--replace` directly; add AGENTS.md rule on npm flag collisions; add unit tests in `tests/ingest_plan.test.ts`).
+2. Fix 8 `@typescript-eslint/no-explicit-any` lint errors in `scripts/extract.ts` (2) and `scripts/inventory.ts` (6) without changing behavior.
+3. Implement `M1-CONTENT-01b` on branch `feat/01b-subject-filter` (`supabase/migrations/01b_subject_filter.sql`, `supabase/schema.sql`, `ACTIVE_SUBJECT = "OS"` in `lib/retrieval.ts`, `/api/ask` routing, `tests/inv-1.test.ts` fixture subject lookup, and OS UI updates in `app/page.tsx`).
+4. Update `spec/tasks.md` and log session state: 01b = "code ready on branch, migration pending (manual)"; M1-CONTENT-03 = "ingestion run by user, 25 documents, 261 chunks; verification pending".
+
+**Landed:**
+- Safe-by-default ingestion (`scripts/ingest_plan.ts`, committed and pushed to `main` as `b1091ee`):
+  - Ingestion pipeline defaults to dry-run mode when invoked without arguments or via `npm run ingest:plan`.
+  - Real ingestion requires the explicit positional argument `commit` (`npx tsx scripts/ingest_plan.ts commit [--only <substring>] [--replace]`).
+  - First stdout line outputs mode (`MODE: DRY-RUN` or `MODE: REAL (<count> documents with subject 'OS' already exist in database)`).
+  - Added npm flag rule to `AGENTS.md` Section 4.
+  - Added mock test suite `tests/ingest_plan.test.ts` (4 unit tests verifying 0 writes in dry-run, commit requirement, and flag handling).
+- Resolved all 8 `no-explicit-any` ESLint errors (`scripts/extract.ts` and `scripts/inventory.ts`, committed and pushed to `main` as `adb99af`):
+  - Cleaned type narrowing for error catches and PDF/OpenXML archive inspection.
+  - Verified `npm run lint` passes with 0 errors and 0 warnings.
+- M1-CONTENT-01b subject filter implementation (on branch `feat/01b-subject-filter`, committed as `7f55b28`):
+  - Created idempotent migration `supabase/migrations/01b_subject_filter.sql`: adds `documents.doc_type` (`QB` | `Slides` | `Notes` | `Assignment` | `Worked`), backfills from title prefixes, drops old `match_chunks` signature and recreates it with `target_subject text default null` (backward compatible), and re-grants execute to `service_role`.
+  - Updated `supabase/schema.sql` to match final database state.
+  - Exported `ACTIVE_SUBJECT = "OS"` in `lib/retrieval.ts`; updated `retrieveChunks` with optional `subject` and graceful fallback if migration is pending; passed `ACTIVE_SUBJECT` from `app/api/ask/route.ts`.
+  - Updated `tests/inv-1.test.ts` to look up the DBMS test fixture's stored subject from Supabase and pass it explicitly, keeping fixture evaluations passing.
+  - Updated `app/page.tsx`: header subtitle updated to Operating Systems (OS), dropping DBMS test fixture mention; placeholder and sample buttons replaced with 3 OS domain questions (Deadlock conditions, Paging vs Segmentation, Round Robin) + 1 out-of-domain question (Cellular respiration).
+  - Verified `npm run build` (success, exit code 0) and `npm test` (37/37 tests passing, exit code 0).
+- Updated `spec/tasks.md` tracking 01b and M1-CONTENT-03 statuses.
+
+**Did not land:**
+- Did not run migration `01b_subject_filter.sql` against Supabase (deliberately paused; SQL printed for manual review).
+
+**Blockers:**
+- Manual execution of `supabase/migrations/01b_subject_filter.sql` in Supabase SQL Editor required before merging branch to main.
+
+**Noticed, did not fix:**
+- None.
+
+**Spec changes:**
+- Updated `spec/tasks.md` for `M1-CONTENT-01b` and `M1-CONTENT-03`.
+
+**Next action:**
+- Pushkar to review and execute `supabase/migrations/01b_subject_filter.sql` in Supabase SQL Editor.
+- Verify retrieval against ingested OS content and proceed to `M1-VERIFY-01`.
+
+---
+
 ## 2026-11-07 — Antigravity / Session 26 — M1-CONTENT-03 ingest pipeline & retry hardening (M1-CONTENT-03b deferred)
 
 **Milestone:** M1 — Real content, one subject.
