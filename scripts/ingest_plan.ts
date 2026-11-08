@@ -11,16 +11,28 @@ import type { ChunkItem } from "../lib/ingest";
  * Reads local/plan.json and local/extracted/*.md, include:true only.
  * Title from plan.json (keeps [DocType] prefix); subject "OS".
  *
+ * Usage:
+ *   npx tsx scripts/ingest_plan.ts [commit] [--replace] [--only <substring>]
+ *   npm run ingest:plan
+ *
  * Modes:
- *   --dry-run: chunk every file, NO embedding/database calls.
- *              Writes local/chunk_report.json and prints summary.
- *   (default): real ingestion with idempotency per title.
- *   --replace: in real mode, deletes existing document's chunks first.
+ *   (default / no args): DRY-RUN mode. Safe by default. Chunks every file,
+ *                        NO embedding or database writes. Writes local/chunk_report.json.
+ *   commit:              REAL ingestion mode. Requires explicit positional word "commit".
+ *                        Generates embeddings and writes to Supabase.
+ *   --replace:           In real mode, deletes existing document's chunks first.
+ *   --only <substring>:  Repeatable filter to process only matching document titles.
+ *
+ * NOTE ON NPM FLAGS (AGENTS.md):
+ *   Never gate writes behind npm-defined flags like --dry-run, --force, etc.
+ *   npm consumes its own flags before scripts see them.
+ *   When passing flags like --only or --replace directly with commit, run:
+ *   `npx tsx scripts/ingest_plan.ts commit --only "..." --replace`
  *
  * Does not write doc_type. Backfill from title prefix after 01b migration.
  */
 
-interface PlanEntry {
+export interface PlanEntry {
   path: string;
   include: boolean;
   docType: string;
@@ -28,7 +40,7 @@ interface PlanEntry {
   reason?: string;
 }
 
-interface FileChunkReport {
+export interface FileChunkReport {
   title: string;
   sourcePath: string;
   sourceChars: number;
@@ -45,7 +57,7 @@ interface FileChunkReport {
   error?: string;
 }
 
-interface ChunkReport {
+export interface ChunkReport {
   mode: "dry-run" | "real";
   generatedAt: string;
   subject: string;
@@ -61,14 +73,15 @@ interface ChunkReport {
 }
 
 // Simple telemetry wrapper for countTokens
-function createInstrumentedCountTokens() {
+function createInstrumentedCountTokens(customCountTokens?: (text: string) => Promise<number>) {
   let calls = 0;
   let chars = 0;
+  const countFn = customCountTokens ?? countTokens;
 
   const fn = async (text: string): Promise<number> => {
     calls++;
     chars += text.length;
-    return countTokens(text);
+    return countFn(text);
   };
 
   return {
@@ -79,7 +92,18 @@ function createInstrumentedCountTokens() {
   };
 }
 
-async function main() {
+export interface RunIngestPlanOptions {
+  args?: string[];
+  plan?: PlanEntry[];
+  extractedFiles?: Record<string, string>;
+  supabaseClient?: ReturnType<typeof getSupabaseAdmin> | null;
+  countTokensFn?: (text: string) => Promise<number>;
+  embedChunksFn?: (chunks: string[], title: string) => Promise<number[][]>;
+  writeReportFile?: boolean;
+  subject?: string;
+}
+
+export async function runIngestPlan(options: RunIngestPlanOptions = {}): Promise<ChunkReport> {
   // Ensure environment variables are loaded
   if (!process.env.GEMINI_API_KEY && typeof process.loadEnvFile === "function") {
     try {
@@ -89,10 +113,11 @@ async function main() {
     }
   }
 
-  const args = process.argv.slice(2);
-  const isDryRun = args.includes("--dry-run");
+  const args = options.args ?? process.argv.slice(2);
+  const isRealMode = args.includes("commit");
+  const isDryRun = !isRealMode;
   const isReplace = args.includes("--replace");
-  const subject = "OS";
+  const subject = options.subject ?? "OS";
 
   // Parse repeatable --only <title-substring>
   const onlyFilters: string[] = [];
@@ -105,14 +130,48 @@ async function main() {
     }
   }
 
+  // Database client (null in dry-run mode unless explicitly passed)
+  const supabase = isDryRun
+    ? null
+    : (options.supabaseClient ?? getSupabaseAdmin());
+
+  // First output line states MODE; in real mode it also prints how many documents with same subject already exist
+  if (isDryRun) {
+    console.log("MODE: DRY-RUN (safe mode, zero database writes. Pass positional 'commit' to write)");
+  } else {
+    let existingSubjectDocCount = 0;
+    if (supabase) {
+      try {
+        const { count, error } = await supabase
+          .from("documents")
+          .select("*", { count: "exact", head: true })
+          .eq("subject", subject);
+        if (!error && typeof count === "number") {
+          existingSubjectDocCount = count;
+        }
+      } catch {
+        // Fallback to 0 if count query fails
+      }
+    }
+    console.log(
+      `MODE: REAL (${existingSubjectDocCount} documents with subject '${subject}' already exist in database)`
+    );
+  }
+
   console.log(`=== Smriti Ingestion Pipeline [${isDryRun ? "DRY-RUN" : "REAL"} MODE] ===\n`);
 
-  // 1. Read plan.json
-  const planPath = path.resolve(process.cwd(), "local", "plan.json");
-  if (!fs.existsSync(planPath)) {
-    throw new Error(`Plan file not found: ${planPath}`);
+  // 1. Read plan
+  let plan: PlanEntry[];
+  if (options.plan) {
+    plan = options.plan;
+  } else {
+    const planPath = path.resolve(process.cwd(), "local", "plan.json");
+    if (!fs.existsSync(planPath)) {
+      throw new Error(`Plan file not found: ${planPath}`);
+    }
+    plan = JSON.parse(fs.readFileSync(planPath, "utf-8"));
   }
-  const plan: PlanEntry[] = JSON.parse(fs.readFileSync(planPath, "utf-8"));
+
   let included = plan.filter((e) => e.include);
   if (onlyFilters.length > 0) {
     included = included.filter((e) =>
@@ -133,38 +192,41 @@ async function main() {
   let totalCTCalls = 0;
   let totalCTChars = 0;
 
-  const supabase = isDryRun ? null : getSupabaseAdmin();
-
   for (let fi = 0; fi < included.length; fi++) {
     const entry = included[fi];
     const title = entry.title;
 
     // Derive extracted filename: replace source extension with .md
     const baseName = entry.path.replace(/\.[^.]+$/, "") + ".md";
-    const mdPath = path.resolve(extractedDir, baseName);
 
-    if (!fs.existsSync(mdPath)) {
-      console.log(`[${fi + 1}/${included.length}] SKIP (not extracted): ${baseName}`);
-      fileReports.push({
-        title,
-        sourcePath: baseName,
-        sourceChars: 0,
-        chunkCount: 0,
-        tokenMin: 0,
-        tokenMax: 0,
-        tokenAvg: 0,
-        tokenTotal: 0,
-        chunksUnder60Tokens: 0,
-        sampleSectionLabels: [],
-        countTokensCalls: 0,
-        countTokensChars: 0,
-        status: "error",
-        error: "Extracted file not found",
-      });
-      continue;
+    let content: string;
+    if (options.extractedFiles && baseName in options.extractedFiles) {
+      content = options.extractedFiles[baseName];
+    } else {
+      const mdPath = path.resolve(extractedDir, baseName);
+      if (!fs.existsSync(mdPath)) {
+        console.log(`[${fi + 1}/${included.length}] SKIP (not extracted): ${baseName}`);
+        fileReports.push({
+          title,
+          sourcePath: baseName,
+          sourceChars: 0,
+          chunkCount: 0,
+          tokenMin: 0,
+          tokenMax: 0,
+          tokenAvg: 0,
+          tokenTotal: 0,
+          chunksUnder60Tokens: 0,
+          sampleSectionLabels: [],
+          countTokensCalls: 0,
+          countTokensChars: 0,
+          status: "error",
+          error: "Extracted file not found",
+        });
+        continue;
+      }
+      content = fs.readFileSync(mdPath, "utf-8");
     }
 
-    const content = fs.readFileSync(mdPath, "utf-8");
     const sourceChars = content.length;
     totalSourceChars += sourceChars;
 
@@ -207,7 +269,7 @@ async function main() {
       }
 
       // Chunk the document
-      const instrumented = createInstrumentedCountTokens();
+      const instrumented = createInstrumentedCountTokens(options.countTokensFn);
       const chunks: ChunkItem[] = await chunkText(content, instrumented.countTokens);
 
       const tokenCounts = chunks.map((c) => c.tokenCount);
@@ -247,7 +309,8 @@ async function main() {
 
         // Generate embeddings in batches
         const chunkTexts = chunks.map((c) => c.content);
-        const embeddings = await embedChunks(chunkTexts, title.trim());
+        const embedFn = options.embedChunksFn ?? embedChunks;
+        const embeddings = await embedFn(chunkTexts, title.trim());
 
         if (embeddings.length !== chunks.length) {
           throw new Error(
@@ -255,7 +318,7 @@ async function main() {
           );
         }
 
-        // Batch insert chunks (Supabase has a row limit per request; use batches of 50)
+        // Batch insert chunks (batches of 50)
         const batchSize = 50;
         for (let ci = 0; ci < chunks.length; ci += batchSize) {
           const batch = chunks.slice(ci, ci + batchSize).map((c, j) => ({
@@ -333,9 +396,15 @@ async function main() {
     files: fileReports,
   };
 
-  // Write report
-  const reportPath = path.resolve(process.cwd(), "local", "chunk_report.json");
-  fs.writeFileSync(reportPath, JSON.stringify(report, null, 2), "utf-8");
+  // Write report if requested (default true when not explicitly false)
+  if (options.writeReportFile !== false) {
+    const reportPath = path.resolve(process.cwd(), "local", "chunk_report.json");
+    try {
+      fs.writeFileSync(reportPath, JSON.stringify(report, null, 2), "utf-8");
+    } catch {
+      // Ignored if local/ does not exist in testing
+    }
+  }
 
   // Print summary
   console.log("\n=================== INGESTION SUMMARY ===================");
@@ -383,11 +452,14 @@ async function main() {
   if (errorFiles.length > 0) {
     process.exit(1);
   }
+
+  return report;
 }
 
-main().catch((err: unknown) => {
-  const msg = err instanceof Error ? err.message : String(err);
-  console.error("Ingestion pipeline failed:", msg);
-  process.exit(1);
-});
-
+if (process.argv[1] && process.argv[1].endsWith("ingest_plan.ts")) {
+  runIngestPlan().catch((err: unknown) => {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("Ingestion pipeline failed:", msg);
+    process.exit(1);
+  });
+}

@@ -75,6 +75,8 @@ Do not add a dependency without checking: is it needed, is it maintained, does i
 
 **Never commit course material, extracted text, or manifests.** Source course material, extracted text, and the manifest are never committed (the repo is public). All raw course documents, intermediate markdown extractions, and inventory manifests live strictly under gitignored directories (e.g. `local/`).
 
+**Never gate writes, deletes or force-like behavior behind a flag name npm also defines (`--dry-run`, `--force`, `--yes`, `--silent`, ...). Default to safe; require an explicit positional word.** npm parses its own options before scripts see arguments and strips flags like `--dry-run`, causing scripts that treat absence-of-flag as real mode to silently execute real writes. Ingestion and destructive commands must default to safe/dry-run and require an explicit positional word like `commit` to perform real writes.
+
 ---
 
 ## 5. Definition of done
